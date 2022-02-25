@@ -1,0 +1,87 @@
+package http
+
+import (
+	"context"
+	"excel-service/internal/configs"
+	"excel-service/internal/repository"
+	"excel-service/internal/service"
+	"excel-service/internal/transport/http/handler"
+	"fmt"
+	"github.com/go-co-op/gocron"
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
+	container "github.com/vielendanke/go-db-lb"
+	"time"
+)
+
+func StartHTTPServer(ctx context.Context, errCh chan<- error, cfg *configs.Configs) {
+	app := echo.New()
+
+	pool, poolErr := InitDBX(ctx, fmt.Sprintf("user=%s host=%s port=%s password=%s dbname=%s sslmode=%s", cfg.DB.User, cfg.DB.Host, cfg.DB.Port, cfg.DB.Password, cfg.DB.DBName, cfg.DB.SslMode))
+	if poolErr != nil{
+		log.Errorf("failed to initialize database: %s", poolErr)
+		errCh <- poolErr
+		return
+	}
+
+	lb, lbErr := container.NewLoadBalancer(ctx, 2, 2)
+	if lbErr != nil{
+		log.Errorf("failed to create container: %v", lbErr)
+		errCh <- lbErr
+	}
+
+	prErr := lb.AddPGxPoolPrimaryNode(ctx, pool)
+	if prErr != nil{
+		log.Errorf("failed add primary node: %v", prErr)
+		errCh <- prErr
+	}
+
+	srErr := lb.AddPGxPoolNode(ctx, pool)
+	if srErr != nil{
+		log.Errorf("failed add secondary node: %v", srErr)
+		errCh <- srErr
+	}
+
+	excelRepo := repository.NewExcelRepository(lb)
+	excelService := service.NewExcelService(excelRepo, lb)
+
+
+
+	cron := gocron.NewScheduler(time.UTC)
+
+	_, err := cron.Every(5).Minute().Do(func() {fmt.Println("раз кроно два кроно")})
+	if err != nil{
+		fmt.Println("crono error: ", err)
+		errCh <- err
+	}
+
+	cron.StartAsync()
+
+	srvHandler := handler.NewHandler(excelService)
+
+	app.POST("api/v1/upload/excel", srvHandler.SaveExcelFile)
+
+	errCh<-app.Start(cfg.Port)
+}
+
+func InitDBX(ctx context.Context, url string) (*pgxpool.Pool, error) {
+	conf, cfgErr := pgxpool.ParseConfig(url)
+	if cfgErr!=nil{
+		return nil, cfgErr
+	}
+
+	conf.MaxConns = 20
+	conf.MinConns = 10
+	conf.MaxConnIdleTime = 10 * time.Second
+
+	pool, poolErr := pgxpool.ConnectConfig(ctx, conf)
+	if poolErr != nil{
+		return nil, poolErr
+	}
+
+	if pingErr := pool.Ping(ctx); pingErr != nil{
+		return nil, pingErr
+	}
+	return pool, nil
+}
