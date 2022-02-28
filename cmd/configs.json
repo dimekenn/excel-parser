@@ -1,0 +1,11 @@
+{
+  "port": ":9090",
+  "db": {
+    "host": "localhost",
+    "port": "5432",
+    "user": "postgres",
+    "password": "123",
+    "db_name": "postgres",
+    "ssl_mode": "disable"
+  }
+}
