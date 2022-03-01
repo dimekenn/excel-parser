@@ -1,11 +1,5 @@
 version: '3.9'
 
-volumes:
-    modules:
-        driver: local
-    yarncache:
-        driver: local
-
 networks:
     x-private:
         external: true
@@ -19,4 +13,7 @@ services:
     container_name: excel-service
     ports:
       - 9090:9090 
+    networks:
+      - x-public
+      - x-private
     restart: on-failure

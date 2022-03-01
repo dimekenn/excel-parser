@@ -7,38 +7,50 @@ import (
 	"excel-service/internal/service"
 	"excel-service/internal/transport/http/handler"
 	"fmt"
+	"time"
+
+	"os"
+
 	"github.com/go-co-op/gocron"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
 	container "github.com/vielendanke/go-db-lb"
-	"time"
 )
 
-func StartHTTPServer(ctx context.Context, errCh chan<- error, cfg *configs.Configs) {
+func StartHTTPServer(ctx context.Context, errCh chan<- error) {
 	app := echo.New()
 
+	if envErr := godotenv.Load(); envErr != nil {
+		log.Errorf("failed to find env file: %v", envErr)
+		errCh <- envErr
+		return
+	}
+
+	cfg := newConfig()
+
 	pool, poolErr := InitDBX(ctx, fmt.Sprintf("user=%s host=%s port=%s password=%s dbname=%s sslmode=%s", cfg.DB.User, cfg.DB.Host, cfg.DB.Port, cfg.DB.Password, cfg.DB.DBName, cfg.DB.SslMode))
-	if poolErr != nil{
+	if poolErr != nil {
 		log.Errorf("failed to initialize database: %s", poolErr)
 		errCh <- poolErr
 		return
 	}
 
 	lb, lbErr := container.NewLoadBalancer(ctx, 2, 2)
-	if lbErr != nil{
+	if lbErr != nil {
 		log.Errorf("failed to create container: %v", lbErr)
 		errCh <- lbErr
 	}
 
 	prErr := lb.AddPGxPoolPrimaryNode(ctx, pool)
-	if prErr != nil{
+	if prErr != nil {
 		log.Errorf("failed add primary node: %v", prErr)
 		errCh <- prErr
 	}
 
 	srErr := lb.AddPGxPoolNode(ctx, pool)
-	if srErr != nil{
+	if srErr != nil {
 		log.Errorf("failed add secondary node: %v", srErr)
 		errCh <- srErr
 	}
@@ -46,12 +58,10 @@ func StartHTTPServer(ctx context.Context, errCh chan<- error, cfg *configs.Confi
 	excelRepo := repository.NewExcelRepository(lb)
 	excelService := service.NewExcelService(excelRepo, lb)
 
-
-
 	cron := gocron.NewScheduler(time.UTC)
 
-	_, err := cron.Every(5).Minute().Do(func() {fmt.Println("раз кроно два кроно")})
-	if err != nil{
+	_, err := cron.Every(5).Minute().Do(func() { fmt.Println("раз кроно два кроно") })
+	if err != nil {
 		fmt.Println("crono error: ", err)
 		errCh <- err
 	}
@@ -62,12 +72,12 @@ func StartHTTPServer(ctx context.Context, errCh chan<- error, cfg *configs.Confi
 
 	app.POST("api/v1/upload/excel", srvHandler.SaveExcelFile)
 
-	errCh<-app.Start(cfg.Port)
+	errCh <- app.Start(cfg.Port)
 }
 
 func InitDBX(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	conf, cfgErr := pgxpool.ParseConfig(url)
-	if cfgErr!=nil{
+	if cfgErr != nil {
 		return nil, cfgErr
 	}
 
@@ -76,12 +86,33 @@ func InitDBX(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	conf.MaxConnIdleTime = 10 * time.Second
 
 	pool, poolErr := pgxpool.ConnectConfig(ctx, conf)
-	if poolErr != nil{
+	if poolErr != nil {
 		return nil, poolErr
 	}
 
-	if pingErr := pool.Ping(ctx); pingErr != nil{
+	if pingErr := pool.Ping(ctx); pingErr != nil {
 		return nil, pingErr
 	}
 	return pool, nil
+}
+
+func getEnv(key, defaultValue string) string {
+	if value, exists := os.LookupEnv(key); exists {
+		return value
+	}
+	return defaultValue
+}
+
+func newConfig() *configs.Configs {
+	return &configs.Configs{
+		Port: getEnv("port", ":9090"),
+		DB: &configs.DBCfg{
+			User:     getEnv("DB_USERNAME", "postgres"),
+			Password: getEnv("DB_PASSWORD", ""),
+			Host:     getEnv("DB_HOST", "postrges"),
+			Port:     getEnv("DB_PORT", "5432"),
+			DBName:   getEnv("DB_DATABASE", "postrges"),
+			SslMode:  getEnv("DB_SSLMODE", "disable"),
+		},
+	}
 }
