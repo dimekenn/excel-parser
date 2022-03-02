@@ -105,7 +105,7 @@ func getEnv(key, defaultValue string) string {
 
 func newConfig() *configs.Configs {
 	return &configs.Configs{
-		Port: getEnv("port", ":9090"),
+		Port: ":" + getEnv("port", "9090"),
 		DB: &configs.DBCfg{
 			User:     getEnv("DB_USERNAME", "postgres"),
 			Password: getEnv("DB_PASSWORD", ""),

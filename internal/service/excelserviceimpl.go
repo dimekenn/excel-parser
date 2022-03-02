@@ -4,14 +4,15 @@ import (
 	"context"
 	"excel-service/internal/models"
 	"excel-service/internal/repository"
+	"mime/multipart"
+	"net/http"
+	"strconv"
+
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
 	container "github.com/vielendanke/go-db-lb"
 	"github.com/xuri/excelize/v2"
-	"mime/multipart"
-	"net/http"
-	"strconv"
 )
 
 type ExcelServiceImpl struct {
@@ -53,6 +54,7 @@ func (e ExcelServiceImpl) SaveExcelFile(ctx context.Context, file *multipart.Fil
 		}
 		nomenclature := &models.Nomenclature{}
 		nomenclature.Id = uuid.New().String()
+		nomenclature.PackageId = uuid.New().String()
 		nomenclature.CodeSkmtr = row[0]
 		nomenclature.CodeKsNsi = row[1]
 		nomenclature.CodeAmto = row[2]
@@ -61,8 +63,10 @@ func (e ExcelServiceImpl) SaveExcelFile(ctx context.Context, file *multipart.Fil
 		nomenclature.Name = row[5]
 		nomenclature.TmcCodeVendor = row[7]
 		nomenclature.TmcMark = row[8]
-		//nomenclature.DateOfManufacture = row[10]
+		nomenclature.GostTu = row[9]
+		nomenclature.DateOfManufacture = row[10]
 		nomenclature.Manufacturer = row[11]
+		nomenclature.BatchNumber = row[12]
 		if row[13] == "облагается" {
 			nomenclature.IsTax = true
 		}
@@ -85,7 +89,8 @@ func (e ExcelServiceImpl) SaveExcelFile(ctx context.Context, file *multipart.Fil
 			log.Errorf("failed to parse string to float: %v", wpErr)
 			return nil, echo.NewHTTPError(http.StatusBadRequest, "не правильный формат оптовой цены за ед")
 		}
-		nomenclature.WholesalePricePerUnit = float32(wholesalePrice)
+		wholesaleItems := &models.WholesaleItems{}
+		wholesaleItems.WholesalePricePerUnit = float32(wholesalePrice)
 		wholesaleOrderFrom, woFromErr := strconv.Atoi(row[19])
 		if woFromErr != nil {
 			log.Errorf("failed to parse string to int: %v", woFromErr)
@@ -96,8 +101,9 @@ func (e ExcelServiceImpl) SaveExcelFile(ctx context.Context, file *multipart.Fil
 			log.Errorf("failed to parse string to int: %v", woToErr)
 			return nil, echo.NewHTTPError(http.StatusBadRequest, "не правильный формат оптовый заказ от")
 		}
-		nomenclature.WholesaleOrderFrom = wholesaleOrderFrom
-		nomenclature.WholesaleOrderTo = wholesaleOrderTo
+		wholesaleItems.WholesaleOrderFrom = wholesaleOrderFrom
+		wholesaleItems.WholesaleOrderTo = wholesaleOrderTo
+		nomenclature.WholesaleItems = wholesaleItems
 		quantity, qErr := strconv.Atoi(row[21])
 		if qErr != nil {
 			log.Errorf("failed to parse string to int: %v", qErr)
@@ -111,6 +117,31 @@ func (e ExcelServiceImpl) SaveExcelFile(ctx context.Context, file *multipart.Fil
 		nomenclature.PackagingType = row[27]
 		nomenclature.PackingMaterial = row[28]
 		nomenclature.StorageType = row[32]
+		length, lenErr := strconv.ParseFloat(row[33], 32)
+		if lenErr != nil {
+			log.Errorf("float to parse length to float: %v", lenErr)
+			return nil, echo.NewHTTPError(http.StatusBadRequest, "не правильный формат длины")
+		}
+		width, widthErr := strconv.ParseFloat(row[34], 32)
+		if widthErr != nil {
+			log.Errorf("float to parse width to float: %v", widthErr)
+			return nil, echo.NewHTTPError(http.StatusBadRequest, "не правильный формат ширины")
+		}
+		height, heightErr := strconv.ParseFloat(row[35], 32)
+		if heightErr != nil {
+			log.Errorf("float to parse height to float: %v", heightErr)
+			return nil, echo.NewHTTPError(http.StatusBadRequest, "не правильный формат высоты")
+		}
+		nomenclature.Length = float32(length)
+		nomenclature.Width = float32(width)
+		nomenclature.Height = float32(height)
+		amountInPackage, amountErr := strconv.ParseFloat(row[36], 32)
+		if amountErr != nil {
+			log.Errorf("failed to parse amount in package: %v", amountErr)
+			return nil, echo.NewHTTPError(http.StatusBadRequest, "не правильный формат количество в упаковке")
+		}
+		nomenclature.AmountInPackage = int8(amountInPackage)
+
 		wNetto, wNettoErr := strconv.Atoi(row[37])
 		if wNettoErr != nil {
 			log.Errorf("failed to parse string to int: %v", wNettoErr)
@@ -145,7 +176,7 @@ func (e ExcelServiceImpl) SaveExcelFile(ctx context.Context, file *multipart.Fil
 	}(ctx)
 
 	for _, v := range nomenclatures {
-		_, repoErr := e.repo.SaveNomenclature(ctx, v, tx)
+		repoErr := e.repo.SaveNomenclature(ctx, v, tx)
 		if repoErr != nil {
 			return nil, repoErr
 		}
