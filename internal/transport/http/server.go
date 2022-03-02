@@ -60,11 +60,11 @@ func StartHTTPServer(ctx context.Context, errCh chan<- error) {
 
 	cron := gocron.NewScheduler(time.UTC)
 
-	_, err := cron.Every(5).Minute().Do(func() { fmt.Println("раз кроно два кроно") })
-	if err != nil {
-		fmt.Println("crono error: ", err)
-		errCh <- err
-	}
+	// _, err := cron.Every(5).Minute().Do(func() { fmt.Println("раз кроно два кроно") })
+	// if err != nil {
+	// 	fmt.Println("crono error: ", err)
+	// 	errCh <- err
+	// }
 
 	cron.StartAsync()
 
