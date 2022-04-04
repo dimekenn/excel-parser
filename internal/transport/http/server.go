@@ -23,9 +23,7 @@ func StartHTTPServer(ctx context.Context, errCh chan<- error) {
 	app := echo.New()
 
 	if envErr := godotenv.Load(); envErr != nil {
-		log.Errorf("failed to find env file: %v", envErr)
-		errCh <- envErr
-		return
+		log.Warnf("failed to find env file: %v", envErr)
 	}
 
 	cfg := newConfig()
