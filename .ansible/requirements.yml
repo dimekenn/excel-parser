@@ -1,0 +1,3 @@
+- src: git@gitlab.xplanet.int:xmarket/ansible/roles/service-deploy.git
+  version: main
+  scm: git
