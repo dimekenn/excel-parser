@@ -8,4 +8,9 @@ import (
 
 type ExcelService interface {
 	SaveExcelFile(ctx context.Context, file *multipart.FileHeader) (*models.ResponseMsg, error)
+	SaveMTRExcelFile(ctx context.Context, file *multipart.FileHeader) (*models.ResponseMsg, error)
+	SaveCategory(ctx context.Context, file *multipart.FileHeader) (*models.ResponseMsg, error)
+	CreateCompany(ctx context.Context, file *multipart.FileHeader) (*models.ResponseMsg, error)
+	SaveOrganizerNomenclature(ctx context.Context, file *multipart.FileHeader) (*models.ResponseMsg, error)
+	SaveBanks(ctx context.Context, file *multipart.FileHeader) (*models.ResponseMsg, error)
 }

@@ -7,9 +7,8 @@ import (
 	"excel-service/internal/service"
 	"excel-service/internal/transport/http/handler"
 	"fmt"
-	"time"
-
 	"os"
+	"time"
 
 	"github.com/go-co-op/gocron"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -60,17 +59,22 @@ func StartHTTPServer(ctx context.Context, errCh chan<- error) {
 
 	cron := gocron.NewScheduler(time.UTC)
 
-	// _, err := cron.Every(5).Minute().Do(func() { fmt.Println("раз кроно два кроно") })
-	// if err != nil {
-	// 	fmt.Println("crono error: ", err)
-	// 	errCh <- err
-	// }
+	_, err := cron.Every(5).Minute().Do(func() { fmt.Println("раз кроно два кроно") })
+	if err != nil {
+		fmt.Println("crono error: ", err)
+		errCh <- err
+	}
 
 	cron.StartAsync()
 
 	srvHandler := handler.NewHandler(excelService)
 
 	app.POST("api/v1/upload/excel", srvHandler.SaveExcelFile)
+	app.POST("api/v1/upload/mtr", srvHandler.SaveMtr)
+	app.POST("api/v1/upload/category", srvHandler.NewCategory)
+	app.POST("api/v1/upload/company", srvHandler.NewCompany)
+	app.POST("api/v1/upload/orgNomenclature", srvHandler.SaveOrganizerNomenclature)
+	app.POST("api/v1/upload/bank", srvHandler.SaveBanks)
 
 	errCh <- app.Start(cfg.Port)
 }
