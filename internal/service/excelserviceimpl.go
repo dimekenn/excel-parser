@@ -893,6 +893,7 @@ func (e ExcelServiceImpl) GetExcelFromAwsByFileId(ctx context.Context, req *mode
 	secretAccessKey := e.cfg.Aws.AccessKey
 	bucket := e.cfg.Aws.Bucket
 	useSSL := false
+	fmt.Println(endpoint)
 
 	// Initialize minio client object.
 	minioClient, err := minio.New(endpoint, &minio.Options{
