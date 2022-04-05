@@ -1,3 +1,10 @@
+# [1.3.0](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.2.0...v1.3.0) (2022-04-05)
+
+
+### Features
+
+* filepath fixes ([d2f0016](http://gitlab.xplanet.int/xmarket/golang/parser/commit/d2f00164c5c6b546dc44f5839214e0e1ee295f2a))
+
 # [1.2.0](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.1.0...v1.2.0) (2022-04-05)
 
 
