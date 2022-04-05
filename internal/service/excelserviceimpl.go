@@ -896,6 +896,7 @@ func (e ExcelServiceImpl) GetExcelFromAwsByFileId(ctx context.Context, req *mode
 	useSSL := false
 
 	log.Error(endpoint)
+	log.Error("db", e.cfg.DB.DBName)
 
 	// Initialize minio client object.
 	minioClient, err := minio.New(endpoint, &minio.Options{
