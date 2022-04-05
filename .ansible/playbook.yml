@@ -12,3 +12,7 @@
       DB_USERNAME: "{{ lookup('env', 'DB_USERNAME') }}"
       DB_PASSWORD: "{{ lookup('env', 'DB_PASSWORD') }}"
       DB_DATABASE: "{{ lookup('env', 'DB_DATABASE') }}"
+      XCLOUD_DIRECTUS_S3_HOST: "{{ lookup('env', 'XCLOUD_DIRECTUS_S3_HOST') }}"
+      XCLOUD_DIRECTUS_S3_KEY: "{{ lookup('env', 'XCLOUD_DIRECTUS_S3_KEY') }}"
+      XCLOUD_DIRECTUS_S3_SECRET: "{{ lookup('env', 'XCLOUD_DIRECTUS_S3_SECRET') }}"
+      XCLOUD_DIRECTUS_S3_BUCKET: "{{ lookup('env', 'XCLOUD_DIRECTUS_S3_BUCKET') }}"
