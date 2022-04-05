@@ -16,4 +16,9 @@ services:
     networks:
       - x-public
       - x-private
+    environment:
+      XCLOUD_DIRECTUS_S3_HOST: stage.xplanet.int:9000
+      XCLOUD_DIRECTUS_S3_KEY: c57f2f45-fbbb-4edc-a0d1-4fbe13178001
+      XCLOUD_DIRECTUS_S3_SECRET: 4fbe13178001
+      XCLOUD_DIRECTUS_S3_BUCKET: xmarket
     restart: on-failure
