@@ -1,3 +1,10 @@
+# [1.10.0](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.9.0...v1.10.0) (2022-04-05)
+
+
+### Features
+
+* asd ([b6d9a5b](http://gitlab.xplanet.int/xmarket/golang/parser/commit/b6d9a5b01514394aae1e79a49676eff862bf740a))
+
 # [1.9.0](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.8.0...v1.9.0) (2022-04-05)
 
 
