@@ -1,8 +1,9 @@
 package configs
 
 type Configs struct {
-	Port string `json:"port"`
-	DB   *DBCfg `json:"db"`
+	Port string     `json:"port"`
+	DB   *DBCfg     `json:"db"`
+	Aws  *AwsConfig `json:"aws"`
 }
 
 type DBCfg struct {
@@ -14,8 +15,16 @@ type DBCfg struct {
 	SslMode  string `json:"ssl_mode"`
 }
 
+type AwsConfig struct {
+	Host      string `json:"host"`
+	AccessKey string
+	SecretKey string
+	Bucket    string
+}
+
 func NewConfig() *Configs {
 	return &Configs{
-		DB: &DBCfg{},
+		DB:  &DBCfg{},
+		Aws: &AwsConfig{},
 	}
 }
