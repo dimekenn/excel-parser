@@ -7,6 +7,7 @@ import (
 	"excel-service/internal/service"
 	"excel-service/internal/transport/http/handler"
 	"fmt"
+	"net/http"
 	"os"
 	"time"
 
@@ -53,7 +54,7 @@ func StartHTTPServer(ctx context.Context, errCh chan<- error) {
 	}
 
 	excelRepo := repository.NewExcelRepository(lb)
-	excelService := service.NewExcelService(excelRepo, lb)
+	excelService := service.NewExcelService(excelRepo, lb, cfg)
 
 	cron := gocron.NewScheduler(time.UTC)
 
@@ -73,8 +74,14 @@ func StartHTTPServer(ctx context.Context, errCh chan<- error) {
 	app.POST("api/v1/upload/company", srvHandler.NewCompany)
 	app.POST("api/v1/upload/orgNomenclature", srvHandler.SaveOrganizerNomenclature)
 	app.POST("api/v1/upload/bank", srvHandler.SaveBanks)
+	app.POST("api/v1/upload/aws/object", srvHandler.GetExcelFromAwsByFileId)
+	app.GET("dimeken", dimeken)
 
 	errCh <- app.Start(cfg.Port)
+}
+
+func dimeken(c echo.Context) error {
+	return c.JSON(http.StatusCreated, nil)
 }
 
 func InitDBX(ctx context.Context, url string) (*pgxpool.Pool, error) {
@@ -115,6 +122,12 @@ func newConfig() *configs.Configs {
 			Port:     getEnv("DB_PORT", "5432"),
 			DBName:   getEnv("DB_DATABASE", "postrges"),
 			SslMode:  getEnv("DB_SSLMODE", "disable"),
+		},
+		Aws: &configs.AwsConfig{
+			Host:      getEnv("XCLOUD_DIRECTUS_S3_HOST", "postgres"),
+			AccessKey: getEnv("XCLOUD_DIRECTUS_S3_KEY", "postgres"),
+			SecretKey: getEnv("XCLOUD_DIRECTUS_S3_SECRET", "postgres"),
+			Bucket:    getEnv("XCLOUD_DIRECTUS_S3_BUCKET", "postgres"),
 		},
 	}
 }

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"excel-service/internal/configs"
 	"excel-service/internal/models"
 	"excel-service/internal/repository"
 	"fmt"
@@ -14,6 +15,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	container "github.com/vielendanke/go-db-lb"
 	"github.com/xuri/excelize/v2"
 )
@@ -21,10 +24,11 @@ import (
 type ExcelServiceImpl struct {
 	repo repository.ExcelRepository
 	lb   *container.LoadBalancer
+	cfg  *configs.Configs
 }
 
-func NewExcelService(repo repository.ExcelRepository, lb *container.LoadBalancer) ExcelService {
-	return &ExcelServiceImpl{repo: repo, lb: lb}
+func NewExcelService(repo repository.ExcelRepository, lb *container.LoadBalancer, cfg *configs.Configs) ExcelService {
+	return &ExcelServiceImpl{repo: repo, lb: lb, cfg: cfg}
 }
 
 func (e ExcelServiceImpl) SaveExcelFile(ctx context.Context, file *multipart.FileHeader) (*models.ResponseMsg, error) {
@@ -878,7 +882,35 @@ func (e ExcelServiceImpl) SaveBanks(ctx context.Context, file *multipart.FileHea
 			}
 			//return &models.ResponseMsg{Message: "success"}, nil
 		}
+
 	}
+	return &models.ResponseMsg{Message: "success"}, nil
+}
+
+func (e ExcelServiceImpl) GetExcelFromAwsByFileId(ctx context.Context, req *models.GetExcelFromAwsByFileIdReq) (*models.ResponseMsg, error) {
+	endpoint := e.cfg.Aws.Host
+	accessKeyID := e.cfg.Aws.SecretKey
+	secretAccessKey := e.cfg.Aws.AccessKey
+	bucket := e.cfg.Aws.Bucket
+	useSSL := false
+
+	// Initialize minio client object.
+	minioClient, err := minio.New(endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(secretAccessKey, accessKeyID, ""),
+		Secure: useSSL,
+	})
+	if err != nil {
+		log.Error("failed to connect to minio: ", err)
+		return nil, echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	filePath := fmt.Sprintf("././excelfiles/%s", req.FileId)
+	err = minioClient.FGetObject(ctx, bucket, req.FileId, filePath, minio.GetObjectOptions{})
+	if err != nil {
+		fmt.Println("get object err:", err)
+		return nil, err
+	}
+
 	return &models.ResponseMsg{Message: "success"}, nil
 }
 

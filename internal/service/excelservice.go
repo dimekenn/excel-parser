@@ -13,4 +13,5 @@ type ExcelService interface {
 	CreateCompany(ctx context.Context, file *multipart.FileHeader) (*models.ResponseMsg, error)
 	SaveOrganizerNomenclature(ctx context.Context, file *multipart.FileHeader) (*models.ResponseMsg, error)
 	SaveBanks(ctx context.Context, file *multipart.FileHeader) (*models.ResponseMsg, error)
+	GetExcelFromAwsByFileId(ctx context.Context, req *models.GetExcelFromAwsByFileIdReq) (*models.ResponseMsg, error)
 }
