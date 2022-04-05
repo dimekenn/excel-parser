@@ -7,6 +7,7 @@
     service_network_alias: parser
     service_environments:
       XCLOUD_HOST: "{{ lookup('env', 'XCLOUD_HOST') }}"
+<<<<<<< HEAD
 
       XCLOUD_DEBUG: None
       XCLOUD_DATABASE_EXECUTE_MIGRATIONS_ON_START: 'true'
@@ -36,3 +37,11 @@
       XCLOUD_KEYCLOAK_ADMIN_USERNAME: "{{ lookup('env', 'XCLOUD_KEYCLOAK_ADMIN_USERNAME') }}"
       XCLOUD_KEYCLOAK_ADMIN_PASSWORD: "{{ lookup('env', 'XCLOUD_KEYCLOAK_ADMIN_PASSWORD') }}"
       XCLOUD_KEYCLOAK_ADMIN_REALM: "{{ lookup('env', 'XCLOUD_KEYCLOAK_ADMIN_REALM') }}"
+=======
+      PORT: '9090'
+      DB_HOST: "{{ lookup('env', 'DB_HOST') }}"
+      DB_PORT: "{{ lookup('env', 'DB_PORT') }}"
+      DB_USERNAME: "{{ lookup('env', 'DB_USERNAME') }}"
+      DB_PASSWORD: "{{ lookup('env', 'DB_PASSWORD') }}"
+      DB_DATABASE: "{{ lookup('env', 'DB_DATABASE') }}"
+>>>>>>> 41b06dcb6f21789e611960798f39ab40d3916cb7

@@ -11,7 +11,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/go-co-op/gocron"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
@@ -56,16 +55,6 @@ func StartHTTPServer(ctx context.Context, errCh chan<- error) {
 	excelRepo := repository.NewExcelRepository(lb)
 	excelService := service.NewExcelService(excelRepo, lb, cfg)
 
-	cron := gocron.NewScheduler(time.UTC)
-
-	_, err := cron.Every(5).Minute().Do(func() { fmt.Println("раз кроно два кроно") })
-	if err != nil {
-		fmt.Println("crono error: ", err)
-		errCh <- err
-	}
-
-	cron.StartAsync()
-
 	srvHandler := handler.NewHandler(excelService)
 
 	app.POST("api/v1/upload/excel", srvHandler.SaveExcelFile)
@@ -81,10 +70,6 @@ func StartHTTPServer(ctx context.Context, errCh chan<- error) {
 }
 func dimeken(c echo.Context) error {
 	return c.JSON(http.StatusOK, nil)
-}
-
-func dimeken(c echo.Context) error {
-	return c.JSON(http.StatusCreated, nil)
 }
 
 func InitDBX(ctx context.Context, url string) (*pgxpool.Pool, error) {

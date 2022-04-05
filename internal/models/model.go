@@ -206,7 +206,7 @@ type OrganizerNomenclature struct {
 
 type CargoCatalogue struct {
 	MinLotShipment   string `json:"min_lot_shipment"`
-	ManufacturerDays string `json:"manufacturer_days	"`
+	ManufacturerDays string `json:"manufacturer_days"`
 }
 
 // type GetExcelFromAwsByFileIdReq{
