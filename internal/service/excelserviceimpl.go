@@ -916,10 +916,15 @@ func (e ExcelServiceImpl) GetExcelFromAwsByFileId(ctx context.Context, req *mode
 		return nil, err
 	}
 	log.Info("prowel")
-	err = minioClient.FGetObject(ctx, bucket, req.FileId, req.FileId, minio.GetObjectOptions{})
+
+	obj, err := minioClient.GetObject(ctx, bucket, req.FileId, minio.GetObjectOptions{})
 	if err != nil {
-		fmt.Println("get object err:", err)
+		log.Error("get object err:", err)
 		return nil, err
+	}
+	if obj == nil {
+		log.Warn("object is nil")
+		return nil, nil
 	}
 
 	return &models.ResponseMsg{Message: "success"}, nil
