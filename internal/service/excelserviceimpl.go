@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"excel-service/internal/configs"
 	"excel-service/internal/models"
 	"excel-service/internal/repository"
 	"fmt"
@@ -14,8 +15,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
-	"github.com/minio/minio-go"
-	"github.com/minio/minio-go/pkg/credentials"
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	container "github.com/vielendanke/go-db-lb"
 	"github.com/xuri/excelize/v2"
 )
@@ -23,10 +24,11 @@ import (
 type ExcelServiceImpl struct {
 	repo repository.ExcelRepository
 	lb   *container.LoadBalancer
+	cfg  *configs.Configs
 }
 
-func NewExcelService(repo repository.ExcelRepository, lb *container.LoadBalancer) ExcelService {
-	return &ExcelServiceImpl{repo: repo, lb: lb}
+func NewExcelService(repo repository.ExcelRepository, lb *container.LoadBalancer, cfg *configs.Configs) ExcelService {
+	return &ExcelServiceImpl{repo: repo, lb: lb, cfg: cfg}
 }
 
 func (e ExcelServiceImpl) SaveExcelFile(ctx context.Context, file *multipart.FileHeader) (*models.ResponseMsg, error) {

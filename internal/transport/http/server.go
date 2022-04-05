@@ -54,7 +54,7 @@ func StartHTTPServer(ctx context.Context, errCh chan<- error) {
 	}
 
 	excelRepo := repository.NewExcelRepository(lb)
-	excelService := service.NewExcelService(excelRepo, lb)
+	excelService := service.NewExcelService(excelRepo, lb, cfg)
 
 	cron := gocron.NewScheduler(time.UTC)
 
@@ -121,6 +121,12 @@ func newConfig() *configs.Configs {
 			Port:     getEnv("DB_PORT", "5432"),
 			DBName:   getEnv("DB_DATABASE", "postrges"),
 			SslMode:  getEnv("DB_SSLMODE", "disable"),
+		},
+		Aws: &configs.AwsConfig{
+			Host:      getEnv("XCLOUD_DIRECTUS_S3_HOST", "postgres"),
+			AccessKey: getEnv("XCLOUD_DIRECTUS_S3_KEY", "postgres"),
+			SecretKey: getEnv("XCLOUD_DIRECTUS_S3_SECRET", "postgres"),
+			Bucket:    getEnv("XCLOUD_DIRECTUS_S3_BUCKET", "postgres"),
 		},
 	}
 }
