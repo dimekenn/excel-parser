@@ -1,3 +1,10 @@
+# [1.16.0](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.15.0...v1.16.0) (2022-04-05)
+
+
+### Features
+
+* hope its last ([b2c0969](http://gitlab.xplanet.int/xmarket/golang/parser/commit/b2c09699bb4c136539a33dd8f29efd2026535007))
+
 # [1.15.0](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.14.0...v1.15.0) (2022-04-05)
 
 
