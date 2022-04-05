@@ -14,6 +14,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
+	"github.com/minio/minio-go"
+	"github.com/minio/minio-go/pkg/credentials"
 	container "github.com/vielendanke/go-db-lb"
 	"github.com/xuri/excelize/v2"
 )
@@ -879,6 +881,33 @@ func (e ExcelServiceImpl) SaveBanks(ctx context.Context, file *multipart.FileHea
 			//return &models.ResponseMsg{Message: "success"}, nil
 		}
 	}
+	return &models.ResponseMsg{Message: "success"}, nil
+}
+
+func (e ExcelServiceImpl) GetExcelFromAwsByFileId(ctx context.Context, req *models.GetExcelFromAwsByFileIdReq) (*models.ResponseMsg, error) {
+	endpoint := e.cfg.Aws.Host
+	accessKeyID := e.cfg.Aws.SecretKey
+	secretAccessKey := e.cfg.Aws.AccessKey
+	bucket := e.cfg.Aws.Bucket
+	useSSL := false
+
+	// Initialize minio client object.
+	minioClient, err := minio.New(endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(secretAccessKey, accessKeyID, ""),
+		Secure: useSSL,
+	})
+	if err != nil {
+		log.Error("failed to connect to minio: ", err)
+		return nil, echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	filePath := fmt.Sprintf("././excelfiles/%s", req.FileId)
+	err = minioClient.FGetObject(ctx, bucket, req.FileId, filePath, minio.GetObjectOptions{})
+	if err != nil {
+		fmt.Println("get object err:", err)
+		return nil, err
+	}
+
 	return &models.ResponseMsg{Message: "success"}, nil
 }
 
