@@ -1,3 +1,10 @@
+# [1.7.0](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.6.0...v1.7.0) (2022-04-05)
+
+
+### Features
+
+* fixes ([9721dcd](http://gitlab.xplanet.int/xmarket/golang/parser/commit/9721dcd933c0975f7a9f4f5ab84cfc918d5348b4))
+
 # [1.6.0](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.5.0...v1.6.0) (2022-04-05)
 
 
