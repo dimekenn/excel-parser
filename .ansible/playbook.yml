@@ -6,42 +6,9 @@
     service_network_is_external: true
     service_network_alias: parser
     service_environments:
-      XCLOUD_HOST: "{{ lookup('env', 'XCLOUD_HOST') }}"
-<<<<<<< HEAD
-
-      XCLOUD_DEBUG: None
-      XCLOUD_DATABASE_EXECUTE_MIGRATIONS_ON_START: 'true'
-
-#      ### MINIO
-      XCLOUD_S3_HOST: "{{ lookup('env', 'XCLOUD_S3_HOST') }}"
-      XCLOUD_S3_PORT: "{{ lookup('env', 'XCLOUD_S3_PORT') }}"
-      XCLOUD_S3_KEY: "{{ lookup('env', 'XCLOUD_S3_KEY') }}"
-      XCLOUD_S3_SECRET: "{{ lookup('env', 'XCLOUD_S3_SECRET') }}"
-      XCLOUD_S3_BUCKET: "{{ lookup('env', 'XCLOUD_S3_BUCKET') }}"
-
-#      ### RABBIT
-#      XCLOUD_RABBIT_HOST: "{{ lookup('env', 'XCLOUD_RABBIT_HOST') }}"
-#      XCLOUD_RABBIT_PORT: "{{ lookup('env', 'XCLOUD_RABBIT_PORT') }}"
-#      XCLOUD_RABBIT_USERNAME: "{{ lookup('env', 'XCLOUD_RABBIT_USERNAME') }}"
-#      XCLOUD_RABBIT_PASSWORD: "{{ lookup('env', 'XCLOUD_RABBIT_PASSWORD') }}"
-
-      ### DATABASE
-      XCLOUD_DATABASE_TYPE: sqlite
-      XCLOUD_DATABASE_DATABASE: "{{ service_persistence_path }}/database/app.sqlite"
-
-      ### KEYCLOAK
-      XCLOUD_KEYCLOAK_VERSION: latest
-      XCLOUD_KEYCLOAK_AUTH_SERVER_URL: "{{ lookup('env', 'XCLOUD_KEYCLOAK_AUTH_SERVER_URL') }}"
-      XCLOUD_KEYCLOAK_REALM: "{{ lookup('env', 'XCLOUD_KEYCLOAK_REALM') }}"
-      XCLOUD_KEYCLOAK_ADMIN_CLIENT_ID: "{{ lookup('env', 'XCLOUD_KEYCLOAK_ADMIN_CLIENT_ID') }}"
-      XCLOUD_KEYCLOAK_ADMIN_USERNAME: "{{ lookup('env', 'XCLOUD_KEYCLOAK_ADMIN_USERNAME') }}"
-      XCLOUD_KEYCLOAK_ADMIN_PASSWORD: "{{ lookup('env', 'XCLOUD_KEYCLOAK_ADMIN_PASSWORD') }}"
-      XCLOUD_KEYCLOAK_ADMIN_REALM: "{{ lookup('env', 'XCLOUD_KEYCLOAK_ADMIN_REALM') }}"
-=======
       PORT: '9090'
       DB_HOST: "{{ lookup('env', 'DB_HOST') }}"
       DB_PORT: "{{ lookup('env', 'DB_PORT') }}"
       DB_USERNAME: "{{ lookup('env', 'DB_USERNAME') }}"
       DB_PASSWORD: "{{ lookup('env', 'DB_PASSWORD') }}"
       DB_DATABASE: "{{ lookup('env', 'DB_DATABASE') }}"
->>>>>>> 41b06dcb6f21789e611960798f39ab40d3916cb7
