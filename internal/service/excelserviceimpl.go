@@ -904,7 +904,7 @@ func (e ExcelServiceImpl) GetExcelFromAwsByFileId(ctx context.Context, req *mode
 		return nil, echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	filePath := fmt.Sprintf("././excelfiles/%s", req.FileId)
+	filePath := fmt.Sprintf("excelfiles/%s", req.FileId)
 	err = minioClient.FGetObject(ctx, bucket, req.FileId, filePath, minio.GetObjectOptions{})
 	if err != nil {
 		fmt.Println("get object err:", err)
