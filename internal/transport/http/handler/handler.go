@@ -121,3 +121,18 @@ func (h *Handler) SaveBanks(c echo.Context) error {
 	log.Infof("success response: %v", res)
 	return c.JSON(http.StatusOK, res)
 }
+
+func (h *Handler) GetExcelFromAwsByFileId(c echo.Context) error {
+	var req models.GetExcelFromAwsByFileIdReq
+	if bErr := c.Bind(&req); bErr != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, bErr)
+	}
+
+	res, resErr := h.excelService.GetExcelFromAwsByFileId(c.Request().Context(), &req)
+	if resErr != nil {
+		return resErr
+	}
+
+	log.Infof("success response: %v", res)
+	return c.JSON(http.StatusOK, res)
+}

@@ -7,6 +7,7 @@ import (
 	"excel-service/internal/service"
 	"excel-service/internal/transport/http/handler"
 	"fmt"
+	"net/http"
 	"os"
 	"time"
 
@@ -73,8 +74,13 @@ func StartHTTPServer(ctx context.Context, errCh chan<- error) {
 	app.POST("api/v1/upload/company", srvHandler.NewCompany)
 	app.POST("api/v1/upload/orgNomenclature", srvHandler.SaveOrganizerNomenclature)
 	app.POST("api/v1/upload/bank", srvHandler.SaveBanks)
+	app.POST("api/v1/upload/aws/object", srvHandler.GetExcelFromAwsByFileId)
+	app.GET("dimeken", dimeken)
 
 	errCh <- app.Start(cfg.Port)
+}
+func dimeken(c echo.Context) error {
+	return c.JSON(http.StatusOK, nil)
 }
 
 func InitDBX(ctx context.Context, url string) (*pgxpool.Pool, error) {
