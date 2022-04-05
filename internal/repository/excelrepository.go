@@ -20,4 +20,5 @@ type ExcelRepository interface {
 	SelectUser(ctx context.Context, inn string) (string, error)
 	SaveBanks(ctx context.Context, bik, name, cor_account, address string, tx pgx.Tx) error
 	NewErrorNomenclatureId(ctx context.Context, row_id int)
+	NewUploadCatalogue(ctx context.Context, req *models.GetExcelFromAwsByFileIdReq) error
 }

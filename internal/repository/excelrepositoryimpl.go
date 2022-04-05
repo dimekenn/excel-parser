@@ -18,6 +18,13 @@ type ExcelRepositoryImpl struct {
 	lb *container.LoadBalancer
 }
 
+func (e ExcelRepositoryImpl) NewUploadCatalogue(ctx context.Context, req *models.GetExcelFromAwsByFileIdReq) error {
+	e.lb.CallPrimaryPreferred().PGxPool().Exec(
+		ctx,
+		"insert into catalogue_uploads",
+	)
+	return nil
+}
 func (e ExcelRepositoryImpl) NewErrorNomenclatureId(ctx context.Context, row_id int) {
 	_, err := e.lb.CallPrimaryPreferred().PGxPool().Exec(
 		ctx,
