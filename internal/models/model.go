@@ -208,3 +208,8 @@ type CargoCatalogue struct {
 	MinLotShipment   string `json:"min_lot_shipment"`
 	ManufacturerDays string `json:"manufacturer_days	"`
 }
+
+// type GetExcelFromAwsByFileIdReq{
+// 	FileId string `json:"file_id"`
+// 	CompanyName string `json:"company_name"`
+// }

@@ -79,6 +79,9 @@ func StartHTTPServer(ctx context.Context, errCh chan<- error) {
 
 	errCh <- app.Start(cfg.Port)
 }
+func dimeken(c echo.Context) error {
+	return c.JSON(http.StatusOK, nil)
+}
 
 func dimeken(c echo.Context) error {
 	return c.JSON(http.StatusCreated, nil)
