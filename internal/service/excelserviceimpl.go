@@ -910,7 +910,7 @@ func (e ExcelServiceImpl) GetExcelFromAwsByFileId(ctx context.Context, req *mode
 	}
 
 	//filePath := fmt.Sprintf("%s", req.FileId)
-	_, err = os.Create("asd/json")
+	_, err = os.Create("asd.json")
 	if err != nil {
 		log.Error("create err", err)
 		return nil, err
