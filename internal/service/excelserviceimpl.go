@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"mime/multipart"
 	"net/http"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -909,6 +910,12 @@ func (e ExcelServiceImpl) GetExcelFromAwsByFileId(ctx context.Context, req *mode
 	}
 
 	//filePath := fmt.Sprintf("%s", req.FileId)
+	_, err = os.Create("asd/json")
+	if err != nil {
+		log.Error("create err", err)
+		return nil, err
+	}
+	log.Info("prowel")
 	err = minioClient.FGetObject(ctx, bucket, req.FileId, req.FileId, minio.GetObjectOptions{})
 	if err != nil {
 		fmt.Println("get object err:", err)
