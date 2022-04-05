@@ -53,6 +53,7 @@ func StartHTTPServer(ctx context.Context, errCh chan<- error) {
 	}
 
 	excelRepo := repository.NewExcelRepository(lb)
+
 	excelService := service.NewExcelService(excelRepo, lb, cfg)
 
 	srvHandler := handler.NewHandler(excelService)
