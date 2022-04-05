@@ -1,3 +1,10 @@
+# [1.4.0](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.3.0...v1.4.0) (2022-04-05)
+
+
+### Features
+
+* docker compose updated ([455d643](http://gitlab.xplanet.int/xmarket/golang/parser/commit/455d643e9ce85733eccc48b36baceeef61771864))
+
 # [1.3.0](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.2.0...v1.3.0) (2022-04-05)
 
 
