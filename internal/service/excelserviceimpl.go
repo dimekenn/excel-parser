@@ -192,6 +192,10 @@ func (e ExcelServiceImpl) SaveExcelFile(ctx context.Context, file *multipart.Fil
 	return &models.ResponseMsg{Message: "success"}, nil
 }
 
+func NewMTRFile(rows [][]string, repo repository.ExcelRepository, ctx context.Context) error {
+
+}
+
 func (e ExcelServiceImpl) SaveMTRExcelFile(ctx context.Context, file *multipart.FileHeader) (*models.ResponseMsg, error) {
 	src, err := file.Open()
 	if err != nil {
