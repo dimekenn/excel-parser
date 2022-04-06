@@ -1,3 +1,10 @@
+# [1.18.0](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.17.0...v1.18.0) (2022-04-06)
+
+
+### Features
+
+* new repo func ([8c91ecb](http://gitlab.xplanet.int/xmarket/golang/parser/commit/8c91ecba4aebdce41bb07947b72527a86f812c79))
+
 # [1.17.0](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.16.0...v1.17.0) (2022-04-05)
 
 
