@@ -138,6 +138,21 @@ func (h *Handler) GetExcelFromAwsByFileId(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
+func (h *Handler) ProcessDirectusUploads(c echo.Context) error {
+	var req models.DirectusModel
+	if bErr := c.Bind(&req); bErr != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, bErr)
+	}
+
+	res, resErr := h.excelService.SaveNomenclatureFromDirectus(c.Request().Context(), &req)
+	if resErr != nil {
+		return resErr
+	}
+
+	log.Infof("success response: %v", res)
+	return c.JSON(http.StatusOK, res)
+}
+
 func (h *Handler) UploadExcelFile(c echo.Context) error {
 	file, err := c.FormFile("file")
 	if err != nil {

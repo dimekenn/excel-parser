@@ -18,6 +18,9 @@ type ExcelRepository interface {
 	CreateCompany(ctx context.Context, company *models.Company, tx pgx.Tx) error
 	CreateUserByCompany(ctx context.Context, inn, email, companyId, companyName string) error
 	SelectUser(ctx context.Context, inn string) (string, error)
+	SelectCompanyInnById(ctx context.Context, companyId string) (string, error)
+	SelectPriceListsByUploadId(ctx context.Context, uploadId string) ([]string, error)
+	SetUploadStatus(ctx context.Context, uploadId string, status string) error
 	SaveBanks(ctx context.Context, bik, name, cor_account, address string, tx pgx.Tx) error
 	NewErrorNomenclatureId(ctx context.Context, row_id int) error
 	NewUploadCatalogue(ctx context.Context, fileNameDisc, fileNameDl, uploadedBy, companyId string, fileSize int64) error

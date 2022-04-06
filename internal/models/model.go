@@ -61,6 +61,7 @@ type Nomenclature struct {
 	CompanyInn            string                 `json:"company_inn"`
 	UserId                string                 `json:"user_id"`
 	CargoCatalogue        *CargoCatalogue        `json:"cargo_catalogue"`
+	PriceLists            []string               `json:"price"`
 }
 
 type Mtr struct {
