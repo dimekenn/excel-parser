@@ -14,4 +14,6 @@ type ExcelService interface {
 	SaveOrganizerNomenclature(ctx context.Context, file *multipart.FileHeader) (*models.ResponseMsg, error)
 	SaveBanks(ctx context.Context, file *multipart.FileHeader) (*models.ResponseMsg, error)
 	GetExcelFromAwsByFileId(ctx context.Context, req *models.GetExcelFromAwsByFileIdReq) (*models.ResponseMsg, error)
+	UploadExcelFile(ctx context.Context, file *multipart.FileHeader, companuyName string) (*models.ResponseMsg, error)
+	SaveNomenclatureFromDirectus(ctx context.Context, req *models.DirectusModel) (*models.ResponseMsg, error)
 }

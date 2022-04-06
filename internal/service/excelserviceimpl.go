@@ -169,21 +169,21 @@ func (e ExcelServiceImpl) SaveExcelFile(ctx context.Context, file *multipart.Fil
 		nomenclatures = append(nomenclatures, nomenclature)
 	}
 
-	tx, txErr := e.lb.CallPrimaryPreferred().PGxPool().Begin(ctx)
-	if txErr != nil {
-		log.Errorf("failed to begin tx: %v", txErr)
-		return nil, echo.NewHTTPError(http.StatusInternalServerError, txErr)
-	}
-	defer func(ctx context.Context) {
-		cErr := tx.Commit(ctx)
-		if cErr != nil {
-			log.Errorf("failed to commit tx in service: %v", cErr)
-			return
-		}
-	}(ctx)
+	// tx, txErr := e.lb.CallPrimaryPreferred().PGxPool().Begin(ctx)
+	// if txErr != nil {
+	// 	log.Errorf("failed to begin tx: %v", txErr)
+	// 	return nil, echo.NewHTTPError(http.StatusInternalServerError, txErr)
+	// }
+	// defer func(ctx context.Context) {
+	// 	cErr := tx.Commit(ctx)
+	// 	if cErr != nil {
+	// 		log.Errorf("failed to commit tx in service: %v", cErr)
+	// 		return
+	// 	}
+	// }(ctx)
 
 	for _, v := range nomenclatures {
-		repoErr := e.repo.SaveNomenclature(ctx, v, tx)
+		repoErr := e.repo.SaveNomenclature(ctx, v, nil)
 		if repoErr != nil {
 			return nil, repoErr
 		}
@@ -694,12 +694,27 @@ func (e ExcelServiceImpl) SaveOrganizerNomenclature(ctx context.Context, file *m
 	}(ctx)
 
 	//var nomenclatures []*models.Nomenclature
+	for _, v := range rows[0] {
+		fmt.Println(v)
+	}
+	return nil, nil
 
-	for i := 590297; i < len(rows); i++ {
-		// if i < 1 {
-		// 	continue
-		// }
-		row := rows[i]
+	if orgRepErr := newOrgranizerNomenclature(rows, e.repo, ctx); orgRepErr != nil {
+		return nil, err
+	}
+	// saveErr := e.repo.SaveArrayNomenclature(ctx, nomenclatures, tx)
+	// if saveErr != nil {
+	// 	fmt.Println("save array nom errors: ", saveErr)
+	// 	return nil, saveErr
+	// }
+	return &models.ResponseMsg{Message: "success"}, nil
+}
+
+func newOrgranizerNomenclature(rows [][]string, repo repository.ExcelRepository, ctx context.Context) error {
+	for i, row := range rows {
+		if i < 1 {
+			continue
+		}
 		fmt.Println("row #", i)
 		nomenclature := &models.Nomenclature{}
 		nomenclature.Id = uuid.New().String()
@@ -801,19 +816,13 @@ func (e ExcelServiceImpl) SaveOrganizerNomenclature(ctx context.Context, file *m
 
 		nomenclature.OrganizerNomenclature = orgNomenclature
 		//nomenclatures = append(nomenclatures, nomenclature)
-		err := e.repo.SaveNomenclature(ctx, nomenclature, tx)
+		err := repo.SaveNomenclature(ctx, nomenclature, nil)
 		if err != nil {
 			log.Error(err)
-			e.repo.NewErrorNomenclatureId(ctx, i)
+			repo.NewErrorNomenclatureId(ctx, i)
 		}
 	}
-
-	// saveErr := e.repo.SaveArrayNomenclature(ctx, nomenclatures, tx)
-	// if saveErr != nil {
-	// 	fmt.Println("save array nom errors: ", saveErr)
-	// 	return nil, saveErr
-	// }
-	return &models.ResponseMsg{Message: "success"}, nil
+	return nil
 }
 
 func netFunc(is string) bool {
@@ -921,6 +930,111 @@ func (e ExcelServiceImpl) GetExcelFromAwsByFileId(ctx context.Context, req *mode
 	}
 
 	return &models.ResponseMsg{Message: "success"}, nil
+}
+
+func (e ExcelServiceImpl) UploadExcelFile(ctx context.Context, file *multipart.FileHeader, companyName string) (*models.ResponseMsg, error) {
+	src, err := file.Open()
+	if err != nil {
+		log.Errorf("failed ti open file: %v", err)
+		return nil, echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	endpoint := e.cfg.Aws.Host
+	accessKeyID := e.cfg.Aws.SecretKey
+	secretAccessKey := e.cfg.Aws.AccessKey
+	bucket := e.cfg.Aws.Bucket
+	useSSL := false
+
+	// Initialize minio client object.
+	minioClient, err := minio.New(endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(secretAccessKey, accessKeyID, ""),
+		Secure: useSSL,
+	})
+	if err != nil {
+		log.Error("failed to connect to minio: ", err)
+		return nil, echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	contentType := "application/vnd.ms-excel"
+	fileNameDisc := uuid.New().String() + file.Filename[len(file.Filename)-5:]
+
+	uploadInfo, uploadErr := minioClient.PutObject(ctx, bucket, fileNameDisc, src, file.Size, minio.PutObjectOptions{ContentType: contentType})
+	if uploadErr != nil {
+		log.Error("failed to upload file to s3:", uploadErr)
+		return nil, echo.NewHTTPError(http.StatusInternalServerError, uploadErr)
+	}
+
+	log.Infof("file %s success uploaded, size: %d", file.Filename, uploadInfo.Size)
+
+	err = e.repo.NewUploadCatalogue(ctx, fileNameDisc, file.Filename, "", companyName, file.Size)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.ResponseMsg{Message: "success"}, nil
+}
+
+func (e ExcelServiceImpl) SaveNomenclatureFromDirectus(ctx context.Context, req *models.DirectusModel) (*models.ResponseMsg, error) {
+	if req.Collection == "uploads" {
+		log.Warnf("collection is %s not uploads", req.Collection)
+		return nil, echo.NewHTTPError(http.StatusBadRequest, "collection is not uploads")
+	}
+
+	upload, uploadErr := e.repo.GetFromUploadCatalogue(ctx, req.Key)
+	if uploadErr != nil {
+		return nil, uploadErr
+	}
+
+	endpoint := e.cfg.Aws.Host
+	accessKeyID := e.cfg.Aws.SecretKey
+	secretAccessKey := e.cfg.Aws.AccessKey
+	bucket := e.cfg.Aws.Bucket
+	useSSL := false
+
+	// Initialize minio client object.
+	minioClient, err := minio.New(endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(secretAccessKey, accessKeyID, ""),
+		Secure: useSSL,
+	})
+	if err != nil {
+		log.Error("failed to connect to minio: ", err)
+		return nil, echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	minioObj, getObjErr := minioClient.GetObject(ctx, bucket, upload.FileId, minio.GetObjectOptions{})
+	if getObjErr != nil {
+		log.Error("failed to get object:", getObjErr)
+		return nil, echo.NewHTTPError(http.StatusInternalServerError, getObjErr)
+	}
+
+	defer minioObj.Close()
+
+	excelFile, fileErr := excelize.OpenReader(minioObj)
+	if fileErr != nil {
+		log.Errorf("failed to open reader: %v", fileErr)
+		return nil, echo.NewHTTPError(http.StatusBadRequest, fileErr)
+	}
+
+	fmt.Println(excelFile.GetSheetList())
+	// Get all the rows in the Sheet1.
+
+	rows, rowsErr := excelFile.GetRows("Лист1")
+
+	if rowsErr != nil {
+		log.Errorf("failed to read sheet: %v", rowsErr)
+		return nil, echo.NewHTTPError(http.StatusBadRequest, "Не правильный наименование страницы excel файла. Переименуйте на Лист1")
+	}
+
+	if rows[0][12] == "ИНН" && rows[0][12] == "Поставщик" {
+		orgNomErr := newOrgranizerNomenclature(rows, e.repo, ctx)
+		if orgNomErr != nil {
+			return nil, orgNomErr
+		}
+	} else {
+
+	}
+
+	return nil, nil
 }
 
 // func (e ExcelServiceImpl) SaveCargoCatalogue(ctx context.Context, file *multipart.FileHeader) (*models.ResponseMsg, error) {

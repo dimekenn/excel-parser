@@ -7,6 +7,7 @@ import (
 	"excel-service/internal/service"
 	"excel-service/internal/transport/http/handler"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -65,11 +66,14 @@ func StartHTTPServer(ctx context.Context, errCh chan<- error) {
 	app.POST("api/v1/upload/orgNomenclature", srvHandler.SaveOrganizerNomenclature)
 	app.POST("api/v1/upload/bank", srvHandler.SaveBanks)
 	app.POST("api/v1/upload/aws/object", srvHandler.GetExcelFromAwsByFileId)
-	app.GET("dimeken", dimeken)
+	app.POST("api/v1/upload/file/excel", srvHandler.UploadExcelFile)
+	app.POST("dimeken", dimeken)
 
 	errCh <- app.Start(cfg.Port)
 }
 func dimeken(c echo.Context) error {
+	res, _ := io.ReadAll(c.Request().Body)
+	fmt.Println(string(res))
 	return c.JSON(http.StatusOK, nil)
 }
 

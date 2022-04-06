@@ -137,3 +137,25 @@ func (h *Handler) GetExcelFromAwsByFileId(c echo.Context) error {
 	log.Infof("success response: %v", res)
 	return c.JSON(http.StatusOK, res)
 }
+
+func (h *Handler) UploadExcelFile(c echo.Context) error {
+	file, err := c.FormFile("file")
+	if err != nil {
+		log.Errorf("failed to read file: %v", err)
+		return echo.NewHTTPError(http.StatusBadRequest, "failed to read file by key file")
+	}
+
+	companyName := c.FormValue("company_name")
+	if companyName == "" {
+		log.Errorf("failed to read company name")
+		return echo.NewHTTPError(http.StatusBadRequest, "failed to read company name by key company_name")
+	}
+
+	res, resErr := h.excelService.UploadExcelFile(c.Request().Context(), file, companyName)
+	if resErr != nil {
+		return resErr
+	}
+
+	log.Infof("success response: %v", res)
+	return c.JSON(http.StatusOK, res)
+}

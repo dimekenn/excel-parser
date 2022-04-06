@@ -18,22 +18,43 @@ type ExcelRepositoryImpl struct {
 	lb *container.LoadBalancer
 }
 
-func (e ExcelRepositoryImpl) NewUploadCatalogue(ctx context.Context, req *models.GetExcelFromAwsByFileIdReq) error {
-	e.lb.CallPrimaryPreferred().PGxPool().Exec(
+func (e ExcelRepositoryImpl) GetFromUploadCatalogue(ctx context.Context, id string) (*models.UploadsEntity, error) {
+	uploadEntity := &models.UploadsEntity{}
+	err := e.lb.CallPrimaryPreferred().PGxPool().QueryRow(
 		ctx,
-		"insert into catalogue_uploads ()",
+		"select u.company, df.filename_disk, du.id from uploads u join uploads_files uf on uf.uploads_id = u.id join directus_files df on df.id = uf.directus_files_id join directus_users du on du.company = u.company where u.id = $1",
+		id,
+	).Scan(&uploadEntity.CompanyId, &uploadEntity.FileId, &uploadEntity.UserId)
+	if err != nil {
+		log.Error("failed to query row in GetFromUploadCatalogue: ", err)
+		return nil, echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	return uploadEntity, nil
+}
+
+func (e ExcelRepositoryImpl) NewUploadCatalogue(ctx context.Context, fileNameDisc, fileNameDl, uploadedBy, companyId string, fileSize int64) error {
+	_, err := e.lb.CallPrimaryPreferred().PGxPool().Exec(
+		ctx,
+		"with ins as (insert into directus_files (id, storage, filename_disk, filename_download, type, uploaded_by, filesize) values (uuid_generate_v4(), 's3', $1, $2, $3, (select id from directus_users where first_name = $4), $5) returning id), upins as (insert into uploads (id, status, created_at , company) values (uuid_generate_v4(), $6, now(),  (select id from company where name = $7)) returning id) insert into uploads_files (uploads_id, directus_files_id) values ((select id from upins), (select id from ins))",
+		fileNameDisc, fileNameDl, "application/vnd.ms-excel", uploadedBy, fileSize, "wait_for_processing", companyId,
 	)
+	if err != nil {
+		log.Error("failed to exec in NewUploadCatalogue: ", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
 	return nil
 }
-func (e ExcelRepositoryImpl) NewErrorNomenclatureId(ctx context.Context, row_id int) {
+func (e ExcelRepositoryImpl) NewErrorNomenclatureId(ctx context.Context, row_id int) error {
 	_, err := e.lb.CallPrimaryPreferred().PGxPool().Exec(
 		ctx,
 		"insert into error_nomenclature_ids (row_id, file_name) values ($1, 'organizer_nomenclature')",
 		row_id,
 	)
-	if err == nil {
-		fmt.Println("error nomenclature inserted")
+	if err != nil {
+		log.Error("failed to exec in NewErrorNomenclatureId: ", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
+	return nil
 }
 
 func (e ExcelRepositoryImpl) CreateUserByCompany(ctx context.Context, inn, email, companyId, companyName string) error {
