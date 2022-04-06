@@ -1,3 +1,10 @@
+# [1.19.0](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.18.0...v1.19.0) (2022-04-06)
+
+
+### Features
+
+* upload api added ([943aace](http://gitlab.xplanet.int/xmarket/golang/parser/commit/943aace7f29bee8261043af054166c35da6fba98))
+
 # [1.18.0](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.17.0...v1.18.0) (2022-04-06)
 
 
