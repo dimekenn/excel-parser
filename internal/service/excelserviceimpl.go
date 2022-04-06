@@ -193,48 +193,7 @@ func (e ExcelServiceImpl) SaveExcelFile(ctx context.Context, file *multipart.Fil
 }
 
 func NewMTRFile(rows [][]string, repo repository.ExcelRepository, ctx context.Context) error {
-
-}
-
-func (e ExcelServiceImpl) SaveMTRExcelFile(ctx context.Context, file *multipart.FileHeader) (*models.ResponseMsg, error) {
-	src, err := file.Open()
-	if err != nil {
-		log.Errorf("failed ti open file: %v", err)
-		return nil, echo.NewHTTPError(http.StatusBadRequest, err)
-	}
-
-	defer src.Close()
-	fmt.Println("start")
-	excelFile, fileErr := excelize.OpenReader(src)
-	if fileErr != nil {
-		log.Errorf("failed to open reader: %v", fileErr)
-		return nil, echo.NewHTTPError(http.StatusBadRequest, fileErr)
-	}
-
-	// Get all the rows in the Sheet1.
-	rows, rowsErr := excelFile.GetRows("TDSheet")
-	if rowsErr != nil {
-		log.Errorf("failed to read sheet: %v", rowsErr)
-		return nil, echo.NewHTTPError(http.StatusBadRequest, "Не правильный наименование страницы excel файла. Переименуйте на Лист1")
-	}
-
-	// tx, txErr := e.lb.CallPrimaryPreferred().PGxPool().Begin(ctx)
-	// if txErr != nil {
-	// 	log.Errorf("failed to begin tx: %v", txErr)
-	// 	return nil, echo.NewHTTPError(http.StatusInternalServerError, txErr)
-	// }
-	// defer func(ctx context.Context) {
-	// 	cErr := tx.Commit(ctx)
-	// 	if cErr != nil {
-	// 		log.Errorf("failed to commit tx in service: %v", cErr)
-	// 		return
-	// 	}
-	// }(ctx)
-
-	//var nomenclatures []*models.Nomenclature
-
-	for i := 195841; i <= len(rows); i++ {
-		v := rows[i]
+	for i, v := range rows {
 		fmt.Println("started")
 		if i == 0 {
 			continue
@@ -264,7 +223,7 @@ func (e ExcelServiceImpl) SaveMTRExcelFile(ctx context.Context, file *multipart.
 			wNetto, wNettoErr := strconv.ParseFloat(v[29], 8)
 			if wNettoErr != nil {
 				log.Errorf("failed to parse string to int: %v", wNettoErr)
-				return nil, echo.NewHTTPError(http.StatusBadRequest, "не правильный формат вес(нетто): "+v[29])
+				return echo.NewHTTPError(http.StatusBadRequest, "не правильный формат вес(нетто): "+v[29])
 			}
 			nomenclature.WeightNetto = float32(wNetto)
 		}
@@ -273,7 +232,7 @@ func (e ExcelServiceImpl) SaveMTRExcelFile(ctx context.Context, file *multipart.
 			wBrutto, wBruttoErr := strconv.ParseFloat(v[30], 8)
 			if wBruttoErr != nil {
 				log.Errorf("failed to parse string to int: %v", wBruttoErr)
-				return nil, echo.NewHTTPError(http.StatusBadRequest, "не правильный формат вес(брутто)"+v[30])
+				return echo.NewHTTPError(http.StatusBadRequest, "не правильный формат вес(брутто)"+v[30])
 			}
 			nomenclature.WeightBrutto = float32(wBrutto)
 		} else {
@@ -371,13 +330,51 @@ func (e ExcelServiceImpl) SaveMTRExcelFile(ctx context.Context, file *multipart.
 		nomenclature.Payload = nomenclatureMTR
 		nomenclature.WholesaleItems = wholesaleItems
 
-		err := e.repo.SaveNomenclature(ctx, nomenclature, nil)
+		err := repo.SaveNomenclature(ctx, nomenclature, nil)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		//nomenclatures = append(nomenclatures, nomenclature)
 	}
+}
+
+func (e ExcelServiceImpl) SaveMTRExcelFile(ctx context.Context, file *multipart.FileHeader) (*models.ResponseMsg, error) {
+	src, err := file.Open()
+	if err != nil {
+		log.Errorf("failed ti open file: %v", err)
+		return nil, echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	defer src.Close()
+	fmt.Println("start")
+	excelFile, fileErr := excelize.OpenReader(src)
+	if fileErr != nil {
+		log.Errorf("failed to open reader: %v", fileErr)
+		return nil, echo.NewHTTPError(http.StatusBadRequest, fileErr)
+	}
+
+	// Get all the rows in the Sheet1.
+	rows, rowsErr := excelFile.GetRows("TDSheet")
+	if rowsErr != nil {
+		log.Errorf("failed to read sheet: %v", rowsErr)
+		return nil, echo.NewHTTPError(http.StatusBadRequest, "Не правильный наименование страницы excel файла. Переименуйте на Лист1")
+	}
+
+	// tx, txErr := e.lb.CallPrimaryPreferred().PGxPool().Begin(ctx)
+	// if txErr != nil {
+	// 	log.Errorf("failed to begin tx: %v", txErr)
+	// 	return nil, echo.NewHTTPError(http.StatusInternalServerError, txErr)
+	// }
+	// defer func(ctx context.Context) {
+	// 	cErr := tx.Commit(ctx)
+	// 	if cErr != nil {
+	// 		log.Errorf("failed to commit tx in service: %v", cErr)
+	// 		return
+	// 	}
+	// }(ctx)
+
+	//var nomenclatures []*models.Nomenclature
 
 	//for _, v := range nomenclatures {
 	//	err := e.repo.SaveNomenclature(ctx, v, tx)
