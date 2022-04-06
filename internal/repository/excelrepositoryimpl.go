@@ -21,7 +21,7 @@ type ExcelRepositoryImpl struct {
 func (e ExcelRepositoryImpl) NewUploadCatalogue(ctx context.Context, req *models.GetExcelFromAwsByFileIdReq) error {
 	e.lb.CallPrimaryPreferred().PGxPool().Exec(
 		ctx,
-		"insert into catalogue_uploads",
+		"insert into catalogue_uploads ()",
 	)
 	return nil
 }
