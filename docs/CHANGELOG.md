@@ -1,3 +1,10 @@
+# [1.21.0](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.20.0...v1.21.0) (2022-04-07)
+
+
+### Features
+
+* Добавлена обработка хука загрузки файлов в директус ([7124f41](http://gitlab.xplanet.int/xmarket/golang/parser/commit/7124f4112aabcf713dfa8a5bfa1087142f327f71))
+
 # [1.20.0](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.19.0...v1.20.0) (2022-04-07)
 
 
