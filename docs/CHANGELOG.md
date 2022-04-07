@@ -1,3 +1,10 @@
+## [1.21.1](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.21.0...v1.21.1) (2022-04-07)
+
+
+### Bug Fixes
+
+* Закостылен поиск шаблона ([e1a4d74](http://gitlab.xplanet.int/xmarket/golang/parser/commit/e1a4d74cb0fc5679c566089b552123a033c950cd))
+
 # [1.21.0](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.20.0...v1.21.0) (2022-04-07)
 
 
