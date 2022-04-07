@@ -1,3 +1,10 @@
+## [1.21.5](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.21.4...v1.21.5) (2022-04-07)
+
+
+### Bug Fixes
+
+* Исправлен парсинг ОКПД2 ([017c3b2](http://gitlab.xplanet.int/xmarket/golang/parser/commit/017c3b25a4ade8d3aea1641f9ea1d2bc0ce49093))
+
 ## [1.21.4](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.21.3...v1.21.4) (2022-04-07)
 
 
