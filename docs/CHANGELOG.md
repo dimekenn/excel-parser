@@ -1,3 +1,10 @@
+## [1.21.6](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.21.5...v1.21.6) (2022-04-07)
+
+
+### Bug Fixes
+
+* Изменен способ поиска ОКПД2 ([cee5a3c](http://gitlab.xplanet.int/xmarket/golang/parser/commit/cee5a3c610ae39cf496433a7660ca3849e571ed8))
+
 ## [1.21.5](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.21.4...v1.21.5) (2022-04-07)
 
 
