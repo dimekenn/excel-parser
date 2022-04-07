@@ -298,6 +298,32 @@ func (e ExcelRepositoryImpl) SaveNomenclature(ctx context.Context, nomenclature 
 			return echo.NewHTTPError(http.StatusInternalServerError, execErr)
 		}
 		fmt.Println("insert into db success with package")
+		if len(nomenclature.PriceLists) > 0 {
+			for _, price := range nomenclature.PriceLists {
+				_, execErr := e.lb.CallPrimaryPreferred().PGxPool().Exec(
+					ctx,
+					"insert into price_nomenclature (price_id, nomenclature_id) values ($1, $2)",
+					price,
+					nomenclature.Id,
+				)
+
+				if execErr != nil {
+					//rbErr := tx.Rollback(ctx)
+					//if rbErr != nil {
+					//	log.Errorf("failed to roll back tx in SaveNomenclature: %v", rbErr)
+					//	return echo.NewHTTPError(http.StatusInternalServerError, rbErr)
+					//}
+					log.Errorf("failed to insert nomenclature price list: %v", execErr)
+					return echo.NewHTTPError(http.StatusInternalServerError, execErr)
+				}
+
+			}
+
+			fmt.Println("insert into db success")
+			return nil
+
+		}
+
 		return nil
 	}
 
