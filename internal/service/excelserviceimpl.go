@@ -18,6 +18,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type ExcelServiceImpl struct {
@@ -77,14 +78,20 @@ func newSupplierNomenclature(rows [][]string, companyInn string, priceLists []st
 		nomenclature.TmcCodeVendor = row[7]
 		nomenclature.TmcMark = row[8]
 		nomenclature.GostTu = row[9]
-		nomenclature.DateOfManufacture = row[10]
-		nomenclature.Manufacturer = row[11]
-		nomenclature.BatchNumber = row[12]
+		if len(row) > 10 {
+			nomenclature.DateOfManufacture = row[10]
+		}
+		if len(row) > 11 {
+			nomenclature.Manufacturer = row[11]
+		}
+		if len(row) > 12 {
+			nomenclature.BatchNumber = row[12]
+		}
 		nomenclature.CompanyInn = companyInn
-		if row[13] == "облагается" {
+		if len(row) > 13 && row[13] == "облагается" {
 			nomenclature.IsTax = true
 		}
-		if nomenclature.IsTax {
+		if len(row) > 14 && nomenclature.IsTax {
 			taxPercentage, taxErr := strconv.ParseFloat(row[14], 8)
 			if taxErr != nil {
 				log.Errorf("failed to parse string to float: %v", taxErr)
@@ -97,20 +104,28 @@ func newSupplierNomenclature(rows [][]string, companyInn string, priceLists []st
 			nomenclature.PriceLists = priceLists
 		}
 
-		pricePerUnit, unitPriceErr := strconv.ParseFloat(row[15], 8)
-		if unitPriceErr != nil {
-			log.Errorf("failed to parse string to float: %v", unitPriceErr)
-		} else {
-			nomenclature.PricePerUnit = float32(pricePerUnit)
+		if len(row) > 16 {
+			pricePerUnit, unitPriceErr := strconv.ParseFloat(row[15], 8)
+			if unitPriceErr != nil {
+				log.Errorf("failed to parse string to float: %v", unitPriceErr)
+			} else {
+				nomenclature.PricePerUnit = float32(pricePerUnit)
+			}
 		}
-		nomenclature.Measurement = row[16]
-		nomenclature.PriceValidThrough = row[17]
+
+		if len(row) > 16 {
+			nomenclature.Measurement = row[16]
+		}
+		if len(row) > 17 {
+			nomenclature.PriceValidThrough = row[17]
+		}
 
 		wholesaleItems := &models.WholesaleItems{}
 
-		wholesaleItems.WholesalePricePerUnit = row[18]
-
-		if row[19] != "" {
+		if len(row) > 18 {
+			wholesaleItems.WholesalePricePerUnit = row[18]
+		}
+		if len(row) > 19 && row[19] != "" {
 			orderDateArr := strings.Split(row[19], "и")
 			if len(orderDateArr) == 2 {
 				// wholesaleOrderFrom, woFromErr := strconv.Atoi(orderDateArr[0])
@@ -125,7 +140,7 @@ func newSupplierNomenclature(rows [][]string, companyInn string, priceLists []st
 		}
 		nomenclature.WholesaleItems = wholesaleItems
 
-		if row[20] != "" {
+		if len(row) > 20 && row[20] != "" {
 			quantity, qErr := strconv.Atoi(row[20])
 			if qErr != nil {
 				log.Errorf("failed to parse string to int: %v", qErr)
@@ -135,15 +150,23 @@ func newSupplierNomenclature(rows [][]string, companyInn string, priceLists []st
 			nomenclature.Quantity = quantity
 		}
 
-		if row[21] == "в наличии" || row[21] == "да" {
+		if len(row) > 21 && (row[21] == "в наличии" || row[21] == "да") {
 			nomenclature.ProductAvailability = true
 		}
 
-		nomenclature.HazardClass = row[25]
-		nomenclature.PackagingType = row[26]
-		nomenclature.PackingMaterial = row[27]
-		nomenclature.StorageType = row[32]
-		if row[32] != "" {
+		if len(row) > 25 {
+			nomenclature.HazardClass = row[25]
+		}
+		if len(row) > 26 {
+			nomenclature.PackagingType = row[26]
+		}
+		if len(row) > 27 {
+			nomenclature.PackingMaterial = row[27]
+		}
+		if len(row) > 32 {
+			nomenclature.StorageType = row[32]
+		}
+		if len(row) > 32 && row[32] != "" {
 			length, lenErr := strconv.ParseFloat(row[32], 32)
 			if lenErr != nil {
 				log.Errorf("float to parse length to float: %v", lenErr)
@@ -151,7 +174,7 @@ func newSupplierNomenclature(rows [][]string, companyInn string, priceLists []st
 			nomenclature.Length = float32(length)
 
 		}
-		if row[33] != "" {
+		if len(row) > 33 && row[33] != "" {
 			width, widthErr := strconv.ParseFloat(row[33], 32)
 			if widthErr != nil {
 				log.Errorf("float to parse width to float: %v", widthErr)
@@ -160,7 +183,7 @@ func newSupplierNomenclature(rows [][]string, companyInn string, priceLists []st
 
 		}
 
-		if row[34] != "" {
+		if len(row) > 34 && row[34] != "" {
 			height, heightErr := strconv.ParseFloat(row[34], 32)
 			if heightErr != nil {
 				log.Errorf("float to parse height to float: %v", heightErr)
@@ -168,7 +191,7 @@ func newSupplierNomenclature(rows [][]string, companyInn string, priceLists []st
 			nomenclature.Height = float32(height)
 		}
 
-		if row[35] != "" {
+		if len(row) > 35 && row[35] != "" {
 			amountInPackage, amountErr := strconv.Atoi(row[35])
 			if amountErr != nil {
 				log.Errorf("failed to parse amount in package: %v", amountErr)
@@ -176,7 +199,7 @@ func newSupplierNomenclature(rows [][]string, companyInn string, priceLists []st
 			nomenclature.AmountInPackage = int8(amountInPackage)
 		}
 
-		if row[36] != "" {
+		if len(row) > 36 && row[36] != "" {
 			wNetto, wNettoErr := strconv.Atoi(row[36])
 			if wNettoErr != nil {
 				log.Errorf("failed to parse string to int: %v", wNettoErr)
@@ -185,7 +208,7 @@ func newSupplierNomenclature(rows [][]string, companyInn string, priceLists []st
 
 		}
 
-		if row[37] != "" {
+		if len(row) > 37 && row[37] != "" {
 			wBrutto, wBruttoErr := strconv.Atoi(row[37])
 			if wBruttoErr != nil {
 				log.Errorf("failed to parse string to int: %v", wBruttoErr)
@@ -193,7 +216,7 @@ func newSupplierNomenclature(rows [][]string, companyInn string, priceLists []st
 			nomenclature.WeightBrutto = float32(wBrutto)
 		}
 
-		if row[38] != "" {
+		if len(row) > 38 && row[38] != "" {
 			volume, volumeErr := strconv.Atoi(row[38])
 			if volumeErr != nil {
 				log.Errorf("failed to parse string to int: %v", volumeErr)
@@ -201,10 +224,18 @@ func newSupplierNomenclature(rows [][]string, companyInn string, priceLists []st
 			nomenclature.Volume = float32(volume)
 		}
 
-		nomenclature.LoadingType = row[39]
-		nomenclature.WarehouseAddress = row[40]
-		nomenclature.Regions = row[41]
-		nomenclature.DeliveryType = row[42]
+		if len(row) > 39 {
+			nomenclature.LoadingType = row[39]
+		}
+		if len(row) > 40 {
+			nomenclature.WarehouseAddress = row[40]
+		}
+		if len(row) > 41 {
+			nomenclature.Regions = row[41]
+		}
+		if len(row) > 42 {
+			nomenclature.DeliveryType = row[42]
+		}
 
 		saveErr := repo.SaveNomenclature(ctx, nomenclature, nil)
 		if saveErr != nil {
@@ -985,7 +1016,7 @@ func (e ExcelServiceImpl) SaveNomenclatureFromDirectus(ctx context.Context, req 
 		log.Warnf("failed to set upload status", err)
 		return nil, err
 	}
-	//time.Sleep(15 * time.Second) // todo удалить после демо 8.10
+	time.Sleep(15 * time.Second) // todo удалить после демо 8.10
 	upload, uploadErr := e.repo.GetFromUploadCatalogue(ctx, req.Key)
 	if uploadErr != nil {
 		log.Warnf("failed to get upload catalog", uploadErr)
