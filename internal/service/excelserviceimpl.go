@@ -61,6 +61,156 @@ func (e ExcelServiceImpl) SaveExcelFile(ctx context.Context, file *multipart.Fil
 	return &models.ResponseMsg{Message: "success"}, nil
 }
 
+func newSupplierNomenclature(rows [][]string, repo repository.ExcelRepository, ctx context.Context) error {
+	for i, row := range rows {
+		if i == 0 || i == 1 {
+			continue
+		}
+		nomenclature := &models.Nomenclature{}
+		nomenclature.Id = uuid.New().String()
+		nomenclature.PackageId = uuid.New().String()
+		nomenclature.CodeSkmtr = row[0]
+		nomenclature.CodeKsNsi = row[1]
+		nomenclature.CodeAmto = row[2]
+		nomenclature.OKPD2 = row[3]
+		nomenclature.CodeTnved = row[4]
+		nomenclature.Name = row[5]
+		nomenclature.TmcCodeVendor = row[7]
+		nomenclature.TmcMark = row[8]
+		nomenclature.GostTu = row[9]
+		nomenclature.DateOfManufacture = row[10]
+		nomenclature.Manufacturer = row[11]
+		nomenclature.BatchNumber = row[12]
+		if row[13] == "облагается" {
+			nomenclature.IsTax = true
+		}
+		if nomenclature.IsTax {
+			taxPercentage, taxErr := strconv.ParseFloat(row[14], 8)
+			if taxErr != nil {
+				log.Errorf("failed to parse string to float: %v", taxErr)
+			} else {
+				nomenclature.TaxPercentage = float32(taxPercentage)
+			}
+		}
+
+		pricePerUnit, unitPriceErr := strconv.ParseFloat(row[15], 8)
+		if unitPriceErr != nil {
+			log.Errorf("failed to parse string to float: %v", unitPriceErr)
+		} else {
+			nomenclature.PricePerUnit = float32(pricePerUnit)
+		}
+		nomenclature.Measurement = row[16]
+		nomenclature.PriceValidThrough = row[17]
+
+		wholesaleItems := &models.WholesaleItems{}
+
+		wholesaleItems.WholesalePricePerUnit = row[18]
+
+		if row[19] != "" {
+			orderDateArr := strings.Split(row[19], "и")
+			if len(orderDateArr) == 2 {
+				// wholesaleOrderFrom, woFromErr := strconv.Atoi(orderDateArr[0])
+				// if woFromErr != nil {
+				// 	log.Errorf("failed to parse string to int: %v", woFromErr)
+				// }
+				wholesaleItems.WholesaleOrderFrom = orderDateArr[0]
+
+				wholesaleItems.WholesaleOrderTo = orderDateArr[1]
+			}
+
+		}
+		nomenclature.WholesaleItems = wholesaleItems
+
+		if row[20] != "" {
+			quantity, qErr := strconv.Atoi(row[20])
+			if qErr != nil {
+				log.Errorf("failed to parse string to int: %v", qErr)
+				return echo.NewHTTPError(http.StatusBadRequest, "не правильный формат количество")
+			}
+
+			nomenclature.Quantity = quantity
+		}
+
+		if row[21] == "в наличии" || row[21] == "да" {
+			nomenclature.ProductAvailability = true
+		}
+
+		nomenclature.HazardClass = row[25]
+		nomenclature.PackagingType = row[26]
+		nomenclature.PackingMaterial = row[27]
+		nomenclature.StorageType = row[32]
+		if row[32] != "" {
+			length, lenErr := strconv.ParseFloat(row[32], 32)
+			if lenErr != nil {
+				log.Errorf("float to parse length to float: %v", lenErr)
+			}
+			nomenclature.Length = float32(length)
+
+		}
+		if row[33] != "" {
+			width, widthErr := strconv.ParseFloat(row[33], 32)
+			if widthErr != nil {
+				log.Errorf("float to parse width to float: %v", widthErr)
+			}
+			nomenclature.Width = float32(width)
+
+		}
+
+		if row[34] != "" {
+			height, heightErr := strconv.ParseFloat(row[34], 32)
+			if heightErr != nil {
+				log.Errorf("float to parse height to float: %v", heightErr)
+			}
+			nomenclature.Height = float32(height)
+		}
+
+		if row[35] != "" {
+			amountInPackage, amountErr := strconv.Atoi(row[35])
+			if amountErr != nil {
+				log.Errorf("failed to parse amount in package: %v", amountErr)
+			}
+			nomenclature.AmountInPackage = int8(amountInPackage)
+		}
+
+		if row[36] != "" {
+			wNetto, wNettoErr := strconv.Atoi(row[36])
+			if wNettoErr != nil {
+				log.Errorf("failed to parse string to int: %v", wNettoErr)
+			}
+			nomenclature.WeightNetto = float32(wNetto)
+
+		}
+
+		if row[37] != "" {
+			wBrutto, wBruttoErr := strconv.Atoi(row[37])
+			if wBruttoErr != nil {
+				log.Errorf("failed to parse string to int: %v", wBruttoErr)
+			}
+			nomenclature.WeightBrutto = float32(wBrutto)
+		}
+
+		if row[38] != "" {
+			volume, volumeErr := strconv.Atoi(row[38])
+			if volumeErr != nil {
+				log.Errorf("failed to parse string to int: %v", volumeErr)
+			}
+			nomenclature.Volume = float32(volume)
+		}
+
+		nomenclature.LoadingType = row[39]
+		nomenclature.WarehouseAddress = row[40]
+		nomenclature.Regions = row[41]
+		nomenclature.DeliveryType = row[42]
+
+		saveErr := repo.SaveNomenclature(ctx, nomenclature, nil)
+		if saveErr != nil {
+			repo.NewErrorNomenclatureId(ctx, i, "supplier_nomenclature")
+		}
+	}
+	return nil
+
+}
+
 func NewMTRFile(rows [][]string, repo repository.ExcelRepository, ctx context.Context) error {
 	for i, v := range rows {
 		fmt.Println("started")
@@ -201,7 +351,7 @@ func NewMTRFile(rows [][]string, repo repository.ExcelRepository, ctx context.Co
 
 		err := repo.SaveNomenclature(ctx, nomenclature, nil)
 		if err != nil {
-			return err
+			repo.NewErrorNomenclatureId(ctx, i, "mtr")
 		}
 	}
 	return nil
@@ -229,27 +379,10 @@ func (e ExcelServiceImpl) SaveMTRExcelFile(ctx context.Context, file *multipart.
 		return nil, echo.NewHTTPError(http.StatusBadRequest, "Не правильный наименование страницы excel файла. Переименуйте на Лист1")
 	}
 
-	// tx, txErr := e.lb.CallPrimaryPreferred().PGxPool().Begin(ctx)
-	// if txErr != nil {
-	// 	log.Errorf("failed to begin tx: %v", txErr)
-	// 	return nil, echo.NewHTTPError(http.StatusInternalServerError, txErr)
-	// }
-	// defer func(ctx context.Context) {
-	// 	cErr := tx.Commit(ctx)
-	// 	if cErr != nil {
-	// 		log.Errorf("failed to commit tx in service: %v", cErr)
-	// 		return
-	// 	}
-	// }(ctx)
-
-	//var nomenclatures []*models.Nomenclature
-
-	//for _, v := range nomenclatures {
-	//	err := e.repo.SaveNomenclature(ctx, v, tx)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//}
+	newMtrErr := NewMTRFile(rows, e.repo, ctx)
+	if newMtrErr != nil {
+		return nil, newMtrErr
+	}
 
 	return &models.ResponseMsg{Message: "success"}, nil
 }
@@ -562,12 +695,6 @@ func (e ExcelServiceImpl) SaveOrganizerNomenclature(ctx context.Context, file *m
 		}
 	}(ctx)
 
-	//var nomenclatures []*models.Nomenclature
-	for _, v := range rows[0] {
-		fmt.Println(v)
-	}
-	return nil, nil
-
 	if orgRepErr := newOrgranizerNomenclature(rows, e.repo, ctx); orgRepErr != nil {
 		return nil, err
 	}
@@ -615,7 +742,7 @@ func newOrgranizerNomenclature(rows [][]string, repo repository.ExcelRepository,
 		if len(row[11]) > 3 {
 			nomenclature.UserId = row[11]
 		} else {
-			nomenclature.UserId = "Supplier"
+			nomenclature.UserId = "Organizer"
 		}
 
 		// if len(row[10]) > 9 {
@@ -688,7 +815,7 @@ func newOrgranizerNomenclature(rows [][]string, repo repository.ExcelRepository,
 		err := repo.SaveNomenclature(ctx, nomenclature, nil)
 		if err != nil {
 			log.Error(err)
-			repo.NewErrorNomenclatureId(ctx, i)
+			repo.NewErrorNomenclatureId(ctx, i, "organizer_nomenclature")
 		}
 	}
 	return nil
@@ -894,16 +1021,27 @@ func (e ExcelServiceImpl) SaveNomenclatureFromDirectus(ctx context.Context, req 
 		return nil, echo.NewHTTPError(http.StatusBadRequest, "Не правильный наименование страницы excel файла. Переименуйте на Лист1")
 	}
 
-	if rows[0][12] == "ИНН" && rows[0][12] == "Поставщик" {
+	if rows[0][10] == "ИНН" && rows[0][11] == "Поставщик" {
 		orgNomErr := newOrgranizerNomenclature(rows, e.repo, ctx)
 		if orgNomErr != nil {
 			return nil, orgNomErr
 		}
-	} else {
-
+		return &models.ResponseMsg{Message: "success"}, nil
+	} else if rows[0][6] == "Наименование" && rows[0][7] == "Артикул" && rows[0][8] == "Идентификатор" {
+		mtrErr := NewMTRFile(rows, e.repo, ctx)
+		if mtrErr != nil {
+			return nil, mtrErr
+		}
+		return &models.ResponseMsg{Message: "success"}, nil
+	} else if rows[0][0] == "Код СКМТР" && rows[0][1] == "КОД КС НСИ" && rows[0][2] == "Код АМТО" {
+		suppErr := newSupplierNomenclature(rows, e.repo, ctx)
+		if suppErr != nil {
+			return nil, suppErr
+		}
+		return &models.ResponseMsg{Message: "success"}, nil
 	}
 
-	return nil, nil
+	return nil, echo.NewHTTPError(http.StatusBadRequest, "неправильный шаблон документа, обратитесь к нам")
 }
 
 // func (e ExcelServiceImpl) SaveCargoCatalogue(ctx context.Context, file *multipart.FileHeader) (*models.ResponseMsg, error) {

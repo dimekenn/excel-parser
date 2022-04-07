@@ -135,9 +135,9 @@ type Mtr struct {
 }
 
 type WholesaleItems struct {
-	WholesalePricePerUnit float32 `json:"wholesale_price_per_unit"`
-	WholesaleOrderFrom    int     `json:"wholesale_order_from"`
-	WholesaleOrderTo      int     `json:"wholesale_order_to"`
+	WholesalePricePerUnit string `json:"wholesale_price_per_unit"`
+	WholesaleOrderFrom    string `json:"wholesale_order_from"`
+	WholesaleOrderTo      string `json:"wholesale_order_to"`
 }
 
 type Company struct {
