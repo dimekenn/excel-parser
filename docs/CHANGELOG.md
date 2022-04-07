@@ -1,3 +1,10 @@
+## [1.21.4](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.21.3...v1.21.4) (2022-04-07)
+
+
+### Bug Fixes
+
+* Убрано использование link ([4f4a5cd](http://gitlab.xplanet.int/xmarket/golang/parser/commit/4f4a5cdff77f0855a45cbccb91f4ea4869a2dd3e))
+
 ## [1.21.3](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.21.2...v1.21.3) (2022-04-07)
 
 
