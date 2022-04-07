@@ -8,7 +8,7 @@ import (
 )
 
 type ExcelRepository interface {
-	SaveNomenclature(ctx context.Context, nomenclature *models.Nomenclature, tx pgx.Tx) error
+	SaveNomenclature(ctx context.Context, nomenclature *models.Nomenclature, tx pgx.Tx, userId, companyId string) error
 	SaveArrayNomenclature(ctx context.Context, nomenclatures []*models.Nomenclature, tx pgx.Tx) error
 	SaveMTRFile(ctx context.Context, nomenclature *models.Mtr, tx pgx.Tx) error
 	NewParentCategory(ctx context.Context, cat string, tx pgx.Tx) error

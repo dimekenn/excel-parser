@@ -53,7 +53,7 @@ func (e ExcelServiceImpl) SaveExcelFile(ctx context.Context, file *multipart.Fil
 		return nil, echo.NewHTTPError(http.StatusBadRequest, "Не правильный наименование страницы excel файла. Переименуйте на Лист1")
 	}
 
-	saveErr := NewMTRFile(rows, e.repo, ctx)
+	saveErr := NewMTRFile(rows, e.repo, ctx, "", "")
 	if saveErr != nil {
 		return nil, saveErr
 	}
@@ -61,7 +61,7 @@ func (e ExcelServiceImpl) SaveExcelFile(ctx context.Context, file *multipart.Fil
 	return &models.ResponseMsg{Message: "success"}, nil
 }
 
-func newSupplierNomenclature(rows [][]string, repo repository.ExcelRepository, ctx context.Context) error {
+func newSupplierNomenclature(rows [][]string, repo repository.ExcelRepository, ctx context.Context, userId, companyId string) error {
 	for i, row := range rows {
 		if i == 0 || i == 1 {
 			continue
@@ -202,7 +202,7 @@ func newSupplierNomenclature(rows [][]string, repo repository.ExcelRepository, c
 		nomenclature.Regions = row[41]
 		nomenclature.DeliveryType = row[42]
 
-		saveErr := repo.SaveNomenclature(ctx, nomenclature, nil)
+		saveErr := repo.SaveNomenclature(ctx, nomenclature, nil, userId, companyId)
 		if saveErr != nil {
 			repo.NewErrorNomenclatureId(ctx, i, "supplier_nomenclature")
 		}
@@ -211,7 +211,7 @@ func newSupplierNomenclature(rows [][]string, repo repository.ExcelRepository, c
 
 }
 
-func NewMTRFile(rows [][]string, repo repository.ExcelRepository, ctx context.Context) error {
+func NewMTRFile(rows [][]string, repo repository.ExcelRepository, ctx context.Context, userId, companyId string) error {
 	for i, v := range rows {
 		fmt.Println("started")
 		if i == 0 {
@@ -349,7 +349,7 @@ func NewMTRFile(rows [][]string, repo repository.ExcelRepository, ctx context.Co
 		nomenclature.Payload = nomenclatureMTR
 		nomenclature.WholesaleItems = wholesaleItems
 
-		err := repo.SaveNomenclature(ctx, nomenclature, nil)
+		err := repo.SaveNomenclature(ctx, nomenclature, nil, userId, companyId)
 		if err != nil {
 			repo.NewErrorNomenclatureId(ctx, i, "mtr")
 		}
@@ -379,7 +379,7 @@ func (e ExcelServiceImpl) SaveMTRExcelFile(ctx context.Context, file *multipart.
 		return nil, echo.NewHTTPError(http.StatusBadRequest, "Не правильный наименование страницы excel файла. Переименуйте на Лист1")
 	}
 
-	newMtrErr := NewMTRFile(rows, e.repo, ctx)
+	newMtrErr := NewMTRFile(rows, e.repo, ctx, "", "")
 	if newMtrErr != nil {
 		return nil, newMtrErr
 	}
@@ -695,7 +695,7 @@ func (e ExcelServiceImpl) SaveOrganizerNomenclature(ctx context.Context, file *m
 		}
 	}(ctx)
 
-	if orgRepErr := newOrgranizerNomenclature(rows, e.repo, ctx); orgRepErr != nil {
+	if orgRepErr := newOrgranizerNomenclature(rows, e.repo, ctx, "", ""); orgRepErr != nil {
 		return nil, err
 	}
 	// saveErr := e.repo.SaveArrayNomenclature(ctx, nomenclatures, tx)
@@ -706,7 +706,7 @@ func (e ExcelServiceImpl) SaveOrganizerNomenclature(ctx context.Context, file *m
 	return &models.ResponseMsg{Message: "success"}, nil
 }
 
-func newOrgranizerNomenclature(rows [][]string, repo repository.ExcelRepository, ctx context.Context) error {
+func newOrgranizerNomenclature(rows [][]string, repo repository.ExcelRepository, ctx context.Context, userId, companyId string) error {
 	for i, row := range rows {
 		if i < 1 {
 			continue
@@ -812,7 +812,7 @@ func newOrgranizerNomenclature(rows [][]string, repo repository.ExcelRepository,
 
 		nomenclature.OrganizerNomenclature = orgNomenclature
 		//nomenclatures = append(nomenclatures, nomenclature)
-		err := repo.SaveNomenclature(ctx, nomenclature, nil)
+		err := repo.SaveNomenclature(ctx, nomenclature, nil, userId, companyId)
 		if err != nil {
 			log.Error(err)
 			repo.NewErrorNomenclatureId(ctx, i, "organizer_nomenclature")
@@ -1022,19 +1022,19 @@ func (e ExcelServiceImpl) SaveNomenclatureFromDirectus(ctx context.Context, req 
 	}
 
 	if rows[0][10] == "ИНН" && rows[0][11] == "Поставщик" {
-		orgNomErr := newOrgranizerNomenclature(rows, e.repo, ctx)
+		orgNomErr := newOrgranizerNomenclature(rows, e.repo, ctx, upload.UserId, upload.CompanyId)
 		if orgNomErr != nil {
 			return nil, orgNomErr
 		}
 		return &models.ResponseMsg{Message: "success"}, nil
 	} else if rows[0][6] == "Наименование" && rows[0][7] == "Артикул" && rows[0][8] == "Идентификатор" {
-		mtrErr := NewMTRFile(rows, e.repo, ctx)
+		mtrErr := NewMTRFile(rows, e.repo, ctx, upload.UserId, upload.CompanyId)
 		if mtrErr != nil {
 			return nil, mtrErr
 		}
 		return &models.ResponseMsg{Message: "success"}, nil
 	} else if rows[0][0] == "Код СКМТР" && rows[0][1] == "КОД КС НСИ" && rows[0][2] == "Код АМТО" {
-		suppErr := newSupplierNomenclature(rows, e.repo, ctx)
+		suppErr := newSupplierNomenclature(rows, e.repo, ctx, upload.UserId, upload.CompanyId)
 		if suppErr != nil {
 			return nil, suppErr
 		}
