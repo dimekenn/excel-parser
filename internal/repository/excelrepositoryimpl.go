@@ -285,7 +285,6 @@ func (e ExcelRepositoryImpl) SaveNomenclature(ctx context.Context, nomenclature 
 			nomenclature.Payload,
 			nomenclature.DrawingName,
 			nomenclature.CategoryName,
-			nomenclature.Link,
 			nomenclature.CompanyInn,
 		)
 
@@ -336,7 +335,6 @@ func (e ExcelRepositoryImpl) SaveNomenclature(ctx context.Context, nomenclature 
 			nomenclature.OrganizerNomenclature,
 			nomenclature.DrawingName,
 			nomenclature.CategoryName,
-			nomenclature.Link,
 			nomenclature.CompanyInn,
 			nomenclature.UserId,
 		)
