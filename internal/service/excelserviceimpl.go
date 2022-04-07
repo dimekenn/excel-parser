@@ -6,13 +6,6 @@ import (
 	"excel-service/internal/models"
 	"excel-service/internal/repository"
 	"fmt"
-	"mime/multipart"
-	"net/http"
-	"regexp"
-	"strconv"
-	"strings"
-	"time"
-
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
@@ -20,6 +13,11 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	container "github.com/vielendanke/go-db-lb"
 	"github.com/xuri/excelize/v2"
+	"mime/multipart"
+	"net/http"
+	"regexp"
+	"strconv"
+	"strings"
 )
 
 type ExcelServiceImpl struct {
@@ -981,13 +979,16 @@ func (e ExcelServiceImpl) SaveNomenclatureFromDirectus(ctx context.Context, req 
 		log.Warnf("collection is %s not uploads", req.Collection)
 		return nil, echo.NewHTTPError(http.StatusBadRequest, "collection is not uploads")
 	}
+	log.Infof("Start processing upload from directus: %v", req)
 	err := e.repo.SetUploadStatus(ctx, req.Key, "processing")
 	if err != nil {
+		log.Warnf("failed to set upload status", err)
 		return nil, err
 	}
-	time.Sleep(15 * time.Second) // todo удалить после демо 8.10
+	//time.Sleep(15 * time.Second) // todo удалить после демо 8.10
 	upload, uploadErr := e.repo.GetFromUploadCatalogue(ctx, req.Key)
 	if uploadErr != nil {
+		log.Warnf("failed to get upload catalog", uploadErr)
 		return nil, uploadErr
 	}
 
@@ -1031,17 +1032,24 @@ func (e ExcelServiceImpl) SaveNomenclatureFromDirectus(ctx context.Context, req 
 	if rows[0][10] == "ИНН" && rows[0][11] == "Поставщик" {
 		orgNomErr := newOrgranizerNomenclature(rows, e.repo, ctx)
 		if orgNomErr != nil {
+			log.Errorf("failed parse: %v", orgNomErr)
 			return nil, orgNomErr
 		}
 		return &models.ResponseMsg{Message: "success"}, nil
 	} else if rows[0][6] == "Наименование" && rows[0][7] == "Артикул" && rows[0][8] == "Идентификатор" {
 		mtrErr := NewMTRFile(rows, e.repo, ctx)
 		if mtrErr != nil {
+			log.Errorf("failed parse: %v", mtrErr)
 			return nil, mtrErr
 		}
-		return &models.ResponseMsg{Message: "success"}, nil
-	} else if rows[0][0] == "Код СКМТР" && rows[0][1] == "КОД КС НСИ" && rows[0][2] == "Код АМТО" {
+		err = e.repo.SetUploadStatus(ctx, req.Key, "processed")
+		if err != nil {
+			log.Errorf("failed to set upload status: %v", fileErr)
+			return nil, echo.NewHTTPError(http.StatusInternalServerError, "Внутренняя ошибка")
+		}
 
+		return &models.ResponseMsg{Message: "success"}, nil
+	} else {
 		inn, companyErr := e.repo.SelectCompanyInnById(ctx, req.Accounting.Company)
 		if companyErr != nil {
 			log.Errorf("failed to get company inn: %v", companyErr)
@@ -1056,15 +1064,19 @@ func (e ExcelServiceImpl) SaveNomenclatureFromDirectus(ctx context.Context, req 
 
 		suppErr := newSupplierNomenclature(rows, inn, priceLists, e.repo, ctx)
 		if suppErr != nil {
-			return nil, suppErr
+			log.Errorf("failed parse: %v", suppErr)
+			return nil, echo.NewHTTPError(http.StatusInternalServerError, "Внутренняя ошибка")
 		}
+		err = e.repo.SetUploadStatus(ctx, req.Key, "processed")
+		if err != nil {
+			log.Errorf("failed to set upload status: %v", fileErr)
+			return nil, echo.NewHTTPError(http.StatusInternalServerError, "Внутренняя ошибка")
+		}
+
 		return &models.ResponseMsg{Message: "success"}, nil
 	}
-	err = e.repo.SetUploadStatus(ctx, req.Key, "processed")
-	if err != nil {
-		return nil, err
-	}
 
+	log.Errorf("failed to find correct template")
 	return nil, echo.NewHTTPError(http.StatusBadRequest, "неправильный шаблон документа, обратитесь к нам")
 }
 
