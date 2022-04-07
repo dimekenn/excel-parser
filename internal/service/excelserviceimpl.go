@@ -62,7 +62,7 @@ func (e ExcelServiceImpl) SaveExcelFile(ctx context.Context, file *multipart.Fil
 	return &models.ResponseMsg{Message: "success"}, nil
 }
 
-func newSupplierNomenclature(rows [][]string, repo repository.ExcelRepository, ctx context.Context) error {
+func newSupplierNomenclature(rows [][]string, companyInn string, priceLists []string, repo repository.ExcelRepository, ctx context.Context) error {
 	for i, row := range rows {
 		if i == 0 || i == 1 {
 			continue
@@ -82,6 +82,7 @@ func newSupplierNomenclature(rows [][]string, repo repository.ExcelRepository, c
 		nomenclature.DateOfManufacture = row[10]
 		nomenclature.Manufacturer = row[11]
 		nomenclature.BatchNumber = row[12]
+		nomenclature.CompanyInn = companyInn
 		if row[13] == "облагается" {
 			nomenclature.IsTax = true
 		}
@@ -92,6 +93,10 @@ func newSupplierNomenclature(rows [][]string, repo repository.ExcelRepository, c
 			} else {
 				nomenclature.TaxPercentage = float32(taxPercentage)
 			}
+		}
+
+		if len(priceLists) > 0 {
+			nomenclature.PriceLists = priceLists
 		}
 
 		pricePerUnit, unitPriceErr := strconv.ParseFloat(row[15], 8)
@@ -821,129 +826,6 @@ func newOrgranizerNomenclature(rows [][]string, repo repository.ExcelRepository,
 	}
 	return nil
 }
-func newSupplierNomenclature(rows [][]string, companyInn string, priceLists []string, repo repository.ExcelRepository, ctx context.Context) error {
-	for i, row := range rows {
-		if i < 2 {
-			continue
-		}
-		fmt.Println("row #", i)
-		fmt.Println(row)
-		fmt.Println(len(row))
-		nomenclature := &models.Nomenclature{}
-		nomenclature.Id = uuid.New().String()
-		nomenclature.Name = row[5]
-		nomenclature.TmcCodeVendor = row[7]
-		nomenclature.Manufacturer = row[11]
-		nomenclature.CodeTnved = row[4]
-		nomenclature.CodeAmto = row[2]
-		nomenclature.GostTu = row[9]
-		nomenclature.DrawingName = row[5]
-		nomenclature.CodeKsNsi = row[1]
-		nomenclature.CompanyInn = companyInn
-		nomenclature.OKPD2 = row[3]
-		nomenclature.CodeSkmtr = row[0]
-		//nomenclature.UserId = userId
-		nomenclature.FullName = row[5]
-		//nomenclature.Representation = row[116]
-		if len(row) > 16 {
-			nomenclature.Measurement = row[16]
-		}
-		if len(priceLists) > 0 {
-			nomenclature.PriceLists = priceLists
-		}
-		//nomenclature.Link = row[13]
-		if len(row[14]) > 1 {
-			taxPercentageString := strings.Replace(row[14], "%", "", 1)
-			taxPercentage, taxErr := strconv.ParseFloat(taxPercentageString, 8)
-			if taxErr != nil {
-				log.Errorf("failed to parse tax percentage: %v", taxErr)
-			} else {
-				nomenclature.TaxPercentage = float32(taxPercentage)
-				nomenclature.IsTax = true
-			}
-		}
-
-		//if len(row[11]) > 3 {
-		//	nomenclature.UserId = row[11]
-		//} else {
-		//	nomenclature.UserId = ctx.
-		//}
-
-		// if len(row[10]) > 9 {
-		// 	userId, idEr := e.repo.SelectUser(ctx, row[10])
-		// 	if idEr != nil {
-		// 		log.Errorf("%v", idEr)
-		// 	}
-
-		// 	nomenclature.UserId = row[10]
-
-		// 	nomenclature.CompanyInn = row[10]
-		// }
-
-		//orgNomenclature := &models.OrganizerNomenclature{}
-		//orgNomenclature.NomenclatureType = row[15]
-		//orgNomenclature.IsWeight = netFunc(row[16])
-		//orgNomenclature.WeightCoefficient = row[17]
-		//orgNomenclature.WIPBalance = row[18]
-		//orgNomenclature.PartitionAccountingBySeries = row[19]
-		//orgNomenclature.AccountingBySeries = row[20]
-		//orgNomenclature.KeepAccountingBySeriesWCD = row[21]
-		//orgNomenclature.KeepAccountingAccordingToCharacteristics = row[22]
-		//orgNomenclature.MainMeasurement = row[24]
-		//orgNomenclature.ReportMeasurement = row[25]
-		//orgNomenclature.ResidueMeasurement = row[26]
-		//orgNomenclature.Kit = row[28]
-		//orgNomenclature.PurposeOfUse = row[29]
-		//orgNomenclature.Comments = row[30]
-		//orgNomenclature.Service = row[31]
-		//orgNomenclature.NomenclatureGroup = row[33]
-		//orgNomenclature.FileImg = row[34]
-		//orgNomenclature.MainSupplier = row[35]
-		//orgNomenclature.SalesManager = row[36]
-		//orgNomenclature.ManufacturerCountry = row[37]
-		//orgNomenclature.GTDNumber = row[38]
-		//orgNomenclature.ArticleCost = row[39]
-		//orgNomenclature.RequiresExternalCertification = netFunc(row[40])
-		//orgNomenclature.RequiresInternalCertification = netFunc(row[41])
-		//orgNomenclature.Set = netFunc(row[44])
-		//orgNomenclature.OKP = row[49]
-		//orgNomenclature.IsAlcohol = netFunc(row[55])
-		//orgNomenclature.IsImportAlcohol = netFunc(row[56])
-		//orgNomenclature.VolumeDAL = row[58]
-		//orgNomenclature.QuarantineZone = netFunc(row[60])
-		//orgNomenclature.CodeSUMI = row[61]
-		//orgNomenclature.AMTOStatus = row[63]
-		//orgNomenclature.ENSKStatus = row[64]
-		//orgNomenclature.ENSKName = row[65]
-		//orgNomenclature.ENSKTM = row[66]
-		//orgNomenclature.ENSKBrandDesign = row[67]
-		//orgNomenclature.ENSKTechSpec = row[68]
-		//orgNomenclature.ENSKMaterialMark = row[71]
-		//orgNomenclature.ENSKGostMaterial = row[72]
-		//orgNomenclature.CatalogueNumber = row[73]
-		//orgNomenclature.ENSKOKPClassificator = row[74]
-		//orgNomenclature.AMTONormName = row[75]
-		//orgNomenclature.AMTOCodeForEOrder = row[76]
-		//orgNomenclature.ENSKExpertComments = row[77]
-		//orgNomenclature.TMXClassificatorGP = row[78]
-		//orgNomenclature.TMXClassificatorOKP = row[79]
-		//orgNomenclature.TMXClassificatorRTK = row[80]
-		//orgNomenclature.TMXCodePDM = row[94]
-		//orgNomenclature.TMXItemType = row[95]
-		//orgNomenclature.IsTobacco = netFunc(row[101])
-		//orgNomenclature.IsShoes = netFunc(row[103])
-		//orgNomenclature.TMXCodeMDM = row[108]
-
-		//nomenclature.OrganizerNomenclature = orgNomenclature
-		//nomenclatures = append(nomenclatures, nomenclature)
-		err := repo.SaveNomenclature(ctx, nomenclature, nil)
-		if err != nil {
-			log.Error(err)
-			repo.NewErrorNomenclatureId(ctx, i)
-		}
-	}
-	return nil
-}
 
 func netFunc(is string) bool {
 	if is == "нет" {
@@ -1145,17 +1027,6 @@ func (e ExcelServiceImpl) SaveNomenclatureFromDirectus(ctx context.Context, req 
 		log.Errorf("failed to read sheet: %v", rowsErr)
 		return nil, echo.NewHTTPError(http.StatusBadRequest, "Не правильный наименование страницы excel файла. Переименуйте на Лист1")
 	}
-	inn, companyErr := e.repo.SelectCompanyInnById(ctx, req.Accounting.Company)
-	if companyErr != nil {
-		log.Errorf("failed to get company inn: %v", companyErr)
-		return nil, echo.NewHTTPError(http.StatusBadRequest, "Внутренняя ошибка")
-	}
-
-	priceLists, priceListErr := e.repo.SelectPriceListsByUploadId(ctx, req.Key)
-	if priceListErr != nil {
-		log.Errorf("failed to get price lists: %v", priceListErr)
-		return nil, echo.NewHTTPError(http.StatusBadRequest, "Внутренняя ошибка")
-	}
 
 	if rows[0][10] == "ИНН" && rows[0][11] == "Поставщик" {
 		orgNomErr := newOrgranizerNomenclature(rows, e.repo, ctx)
@@ -1170,7 +1041,20 @@ func (e ExcelServiceImpl) SaveNomenclatureFromDirectus(ctx context.Context, req 
 		}
 		return &models.ResponseMsg{Message: "success"}, nil
 	} else if rows[0][0] == "Код СКМТР" && rows[0][1] == "КОД КС НСИ" && rows[0][2] == "Код АМТО" {
-		suppErr := newSupplierNomenclature(rows, e.repo, ctx)
+
+		inn, companyErr := e.repo.SelectCompanyInnById(ctx, req.Accounting.Company)
+		if companyErr != nil {
+			log.Errorf("failed to get company inn: %v", companyErr)
+			return nil, echo.NewHTTPError(http.StatusBadRequest, "Внутренняя ошибка")
+		}
+
+		priceLists, priceListErr := e.repo.SelectPriceListsByUploadId(ctx, req.Key)
+		if priceListErr != nil {
+			log.Errorf("failed to get price lists: %v", priceListErr)
+			return nil, echo.NewHTTPError(http.StatusBadRequest, "Внутренняя ошибка")
+		}
+
+		suppErr := newSupplierNomenclature(rows, inn, priceLists, e.repo, ctx)
 		if suppErr != nil {
 			return nil, suppErr
 		}
