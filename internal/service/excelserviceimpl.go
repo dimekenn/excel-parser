@@ -6,7 +6,6 @@ import (
 	"excel-service/internal/models"
 	"excel-service/internal/repository"
 	"fmt"
-	"github.com/minio/minio-go/v7"
 	"mime/multipart"
 	"net/http"
 	"regexp"
@@ -17,6 +16,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
+	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	container "github.com/vielendanke/go-db-lb"
 	"github.com/xuri/excelize/v2"
@@ -54,8 +54,15 @@ func (e ExcelServiceImpl) SaveExcelFile(ctx context.Context, file *multipart.Fil
 		return nil, echo.NewHTTPError(http.StatusBadRequest, "Не правильный наименование страницы excel файла. Переименуйте на Лист1")
 	}
 
-	var nomenclatures []*models.Nomenclature
+	saveErr := NewMTRFile(rows, e.repo, ctx)
+	if saveErr != nil {
+		return nil, saveErr
+	}
 
+	return &models.ResponseMsg{Message: "success"}, nil
+}
+
+func newSupplierNomenclature(rows [][]string, repo repository.ExcelRepository, ctx context.Context) error {
 	for i, row := range rows {
 		if i == 0 || i == 1 {
 			continue
@@ -78,160 +85,135 @@ func (e ExcelServiceImpl) SaveExcelFile(ctx context.Context, file *multipart.Fil
 		if row[13] == "облагается" {
 			nomenclature.IsTax = true
 		}
-		taxPercentage, taxErr := strconv.ParseFloat(row[14], 8)
-		if taxErr != nil {
-			log.Errorf("failed to parse string to float: %v", taxErr)
-			return nil, echo.NewHTTPError(http.StatusBadRequest, "не правильный формат процента налога")
+		if nomenclature.IsTax {
+			taxPercentage, taxErr := strconv.ParseFloat(row[14], 8)
+			if taxErr != nil {
+				log.Errorf("failed to parse string to float: %v", taxErr)
+			} else {
+				nomenclature.TaxPercentage = float32(taxPercentage)
+			}
 		}
-		nomenclature.TaxPercentage = float32(taxPercentage)
+
 		pricePerUnit, unitPriceErr := strconv.ParseFloat(row[15], 8)
 		if unitPriceErr != nil {
 			log.Errorf("failed to parse string to float: %v", unitPriceErr)
-			return nil, echo.NewHTTPError(http.StatusBadRequest, "не правильный формат цены за идиницу")
+		} else {
+			nomenclature.PricePerUnit = float32(pricePerUnit)
 		}
-		nomenclature.PricePerUnit = float32(pricePerUnit)
 		nomenclature.Measurement = row[16]
 		nomenclature.PriceValidThrough = row[17]
-		wholesalePrice, wpErr := strconv.ParseFloat(row[18], 32)
-		if wpErr != nil {
-			log.Errorf("failed to parse string to float: %v", wpErr)
-			return nil, echo.NewHTTPError(http.StatusBadRequest, "не правильный формат оптовой цены за ед")
-		}
+
 		wholesaleItems := &models.WholesaleItems{}
-		wholesaleItems.WholesalePricePerUnit = float32(wholesalePrice)
-		wholesaleOrderFrom, woFromErr := strconv.Atoi(row[19])
-		if woFromErr != nil {
-			log.Errorf("failed to parse string to int: %v", woFromErr)
-			return nil, echo.NewHTTPError(http.StatusBadRequest, "не правильный формат оптовый заказ от")
+
+		wholesaleItems.WholesalePricePerUnit = row[18]
+
+		if row[19] != "" {
+			orderDateArr := strings.Split(row[19], "и")
+			if len(orderDateArr) == 2 {
+				// wholesaleOrderFrom, woFromErr := strconv.Atoi(orderDateArr[0])
+				// if woFromErr != nil {
+				// 	log.Errorf("failed to parse string to int: %v", woFromErr)
+				// }
+				wholesaleItems.WholesaleOrderFrom = orderDateArr[0]
+
+				wholesaleItems.WholesaleOrderTo = orderDateArr[1]
+			}
+
 		}
-		wholesaleOrderTo, woToErr := strconv.Atoi(row[20])
-		if woToErr != nil {
-			log.Errorf("failed to parse string to int: %v", woToErr)
-			return nil, echo.NewHTTPError(http.StatusBadRequest, "не правильный формат оптовый заказ от")
-		}
-		wholesaleItems.WholesaleOrderFrom = wholesaleOrderFrom
-		wholesaleItems.WholesaleOrderTo = wholesaleOrderTo
 		nomenclature.WholesaleItems = wholesaleItems
-		quantity, qErr := strconv.Atoi(row[21])
-		if qErr != nil {
-			log.Errorf("failed to parse string to int: %v", qErr)
-			return nil, echo.NewHTTPError(http.StatusBadRequest, "не правильный формат количество")
+
+		if row[20] != "" {
+			quantity, qErr := strconv.Atoi(row[20])
+			if qErr != nil {
+				log.Errorf("failed to parse string to int: %v", qErr)
+				return echo.NewHTTPError(http.StatusBadRequest, "не правильный формат количество")
+			}
+
+			nomenclature.Quantity = quantity
 		}
-		nomenclature.Quantity = quantity
-		if row[22] == "в наличии" {
+
+		if row[21] == "в наличии" || row[21] == "да" {
 			nomenclature.ProductAvailability = true
 		}
-		nomenclature.HazardClass = row[26]
-		nomenclature.PackagingType = row[27]
-		nomenclature.PackingMaterial = row[28]
+
+		nomenclature.HazardClass = row[25]
+		nomenclature.PackagingType = row[26]
+		nomenclature.PackingMaterial = row[27]
 		nomenclature.StorageType = row[32]
-		length, lenErr := strconv.ParseFloat(row[33], 32)
-		if lenErr != nil {
-			log.Errorf("float to parse length to float: %v", lenErr)
-			return nil, echo.NewHTTPError(http.StatusBadRequest, "не правильный формат длины")
-		}
-		width, widthErr := strconv.ParseFloat(row[34], 32)
-		if widthErr != nil {
-			log.Errorf("float to parse width to float: %v", widthErr)
-			return nil, echo.NewHTTPError(http.StatusBadRequest, "не правильный формат ширины")
-		}
-		height, heightErr := strconv.ParseFloat(row[35], 32)
-		if heightErr != nil {
-			log.Errorf("float to parse height to float: %v", heightErr)
-			return nil, echo.NewHTTPError(http.StatusBadRequest, "не правильный формат высоты")
-		}
-		nomenclature.Length = float32(length)
-		nomenclature.Width = float32(width)
-		nomenclature.Height = float32(height)
-		amountInPackage, amountErr := strconv.ParseFloat(row[36], 32)
-		if amountErr != nil {
-			log.Errorf("failed to parse amount in package: %v", amountErr)
-			return nil, echo.NewHTTPError(http.StatusBadRequest, "не правильный формат количество в упаковке")
-		}
-		nomenclature.AmountInPackage = int8(amountInPackage)
+		if row[32] != "" {
+			length, lenErr := strconv.ParseFloat(row[32], 32)
+			if lenErr != nil {
+				log.Errorf("float to parse length to float: %v", lenErr)
+			}
+			nomenclature.Length = float32(length)
 
-		//wNetto, wNettoErr := strconv.Atoi(row[37])
-		//if wNettoErr != nil {
-		//	log.Errorf("failed to parse string to int: %v", wNettoErr)
-		//	return nil, echo.NewHTTPError(http.StatusBadRequest, "не правильный формат вес(нетто)")
-		//}
-		//wBrutto, wBruttoErr := strconv.Atoi(row[38])
-		//if wBruttoErr != nil {
-		//	log.Errorf("failed to parse string to int: %v", wBruttoErr)
-		//	return nil, echo.NewHTTPError(http.StatusBadRequest, "не правильный формат вес(брутто)")
-		//}
-		//nomenclature.WeightNetto = int16(wNetto)
-		//nomenclature.WeightBrutto = int16(wBrutto)
-		nomenclature.LoadingType = row[40]
-		nomenclature.WarehouseAddress = row[41]
-		nomenclature.Regions = row[42]
-		nomenclature.DeliveryType = row[43]
+		}
+		if row[33] != "" {
+			width, widthErr := strconv.ParseFloat(row[33], 32)
+			if widthErr != nil {
+				log.Errorf("float to parse width to float: %v", widthErr)
+			}
+			nomenclature.Width = float32(width)
 
-		nomenclatures = append(nomenclatures, nomenclature)
+		}
+
+		if row[34] != "" {
+			height, heightErr := strconv.ParseFloat(row[34], 32)
+			if heightErr != nil {
+				log.Errorf("float to parse height to float: %v", heightErr)
+			}
+			nomenclature.Height = float32(height)
+		}
+
+		if row[35] != "" {
+			amountInPackage, amountErr := strconv.Atoi(row[35])
+			if amountErr != nil {
+				log.Errorf("failed to parse amount in package: %v", amountErr)
+			}
+			nomenclature.AmountInPackage = int8(amountInPackage)
+		}
+
+		if row[36] != "" {
+			wNetto, wNettoErr := strconv.Atoi(row[36])
+			if wNettoErr != nil {
+				log.Errorf("failed to parse string to int: %v", wNettoErr)
+			}
+			nomenclature.WeightNetto = float32(wNetto)
+
+		}
+
+		if row[37] != "" {
+			wBrutto, wBruttoErr := strconv.Atoi(row[37])
+			if wBruttoErr != nil {
+				log.Errorf("failed to parse string to int: %v", wBruttoErr)
+			}
+			nomenclature.WeightBrutto = float32(wBrutto)
+		}
+
+		if row[38] != "" {
+			volume, volumeErr := strconv.Atoi(row[38])
+			if volumeErr != nil {
+				log.Errorf("failed to parse string to int: %v", volumeErr)
+			}
+			nomenclature.Volume = float32(volume)
+		}
+
+		nomenclature.LoadingType = row[39]
+		nomenclature.WarehouseAddress = row[40]
+		nomenclature.Regions = row[41]
+		nomenclature.DeliveryType = row[42]
+
+		saveErr := repo.SaveNomenclature(ctx, nomenclature, nil)
+		if saveErr != nil {
+			repo.NewErrorNomenclatureId(ctx, i, "supplier_nomenclature")
+		}
 	}
+	return nil
 
-	// tx, txErr := e.lb.CallPrimaryPreferred().PGxPool().Begin(ctx)
-	// if txErr != nil {
-	// 	log.Errorf("failed to begin tx: %v", txErr)
-	// 	return nil, echo.NewHTTPError(http.StatusInternalServerError, txErr)
-	// }
-	// defer func(ctx context.Context) {
-	// 	cErr := tx.Commit(ctx)
-	// 	if cErr != nil {
-	// 		log.Errorf("failed to commit tx in service: %v", cErr)
-	// 		return
-	// 	}
-	// }(ctx)
-
-	for _, v := range nomenclatures {
-		repoErr := e.repo.SaveNomenclature(ctx, v, nil)
-		if repoErr != nil {
-			return nil, repoErr
-		}
-	}
-
-	return &models.ResponseMsg{Message: "success"}, nil
 }
 
-func (e ExcelServiceImpl) SaveMTRExcelFile(ctx context.Context, file *multipart.FileHeader) (*models.ResponseMsg, error) {
-	src, err := file.Open()
-	if err != nil {
-		log.Errorf("failed ti open file: %v", err)
-		return nil, echo.NewHTTPError(http.StatusBadRequest, err)
-	}
-
-	defer src.Close()
-	fmt.Println("start")
-	excelFile, fileErr := excelize.OpenReader(src)
-	if fileErr != nil {
-		log.Errorf("failed to open reader: %v", fileErr)
-		return nil, echo.NewHTTPError(http.StatusBadRequest, fileErr)
-	}
-
-	// Get all the rows in the Sheet1.
-	rows, rowsErr := excelFile.GetRows("TDSheet")
-	if rowsErr != nil {
-		log.Errorf("failed to read sheet: %v", rowsErr)
-		return nil, echo.NewHTTPError(http.StatusBadRequest, "Не правильный наименование страницы excel файла. Переименуйте на Лист1")
-	}
-
-	// tx, txErr := e.lb.CallPrimaryPreferred().PGxPool().Begin(ctx)
-	// if txErr != nil {
-	// 	log.Errorf("failed to begin tx: %v", txErr)
-	// 	return nil, echo.NewHTTPError(http.StatusInternalServerError, txErr)
-	// }
-	// defer func(ctx context.Context) {
-	// 	cErr := tx.Commit(ctx)
-	// 	if cErr != nil {
-	// 		log.Errorf("failed to commit tx in service: %v", cErr)
-	// 		return
-	// 	}
-	// }(ctx)
-
-	//var nomenclatures []*models.Nomenclature
-
-	for i := 195841; i <= len(rows); i++ {
-		v := rows[i]
+func NewMTRFile(rows [][]string, repo repository.ExcelRepository, ctx context.Context) error {
+	for i, v := range rows {
 		fmt.Println("started")
 		if i == 0 {
 			continue
@@ -261,7 +243,7 @@ func (e ExcelServiceImpl) SaveMTRExcelFile(ctx context.Context, file *multipart.
 			wNetto, wNettoErr := strconv.ParseFloat(v[29], 8)
 			if wNettoErr != nil {
 				log.Errorf("failed to parse string to int: %v", wNettoErr)
-				return nil, echo.NewHTTPError(http.StatusBadRequest, "не правильный формат вес(нетто): "+v[29])
+				return echo.NewHTTPError(http.StatusBadRequest, "не правильный формат вес(нетто): "+v[29])
 			}
 			nomenclature.WeightNetto = float32(wNetto)
 		}
@@ -270,7 +252,7 @@ func (e ExcelServiceImpl) SaveMTRExcelFile(ctx context.Context, file *multipart.
 			wBrutto, wBruttoErr := strconv.ParseFloat(v[30], 8)
 			if wBruttoErr != nil {
 				log.Errorf("failed to parse string to int: %v", wBruttoErr)
-				return nil, echo.NewHTTPError(http.StatusBadRequest, "не правильный формат вес(брутто)"+v[30])
+				return echo.NewHTTPError(http.StatusBadRequest, "не правильный формат вес(брутто)"+v[30])
 			}
 			nomenclature.WeightBrutto = float32(wBrutto)
 		} else {
@@ -368,20 +350,40 @@ func (e ExcelServiceImpl) SaveMTRExcelFile(ctx context.Context, file *multipart.
 		nomenclature.Payload = nomenclatureMTR
 		nomenclature.WholesaleItems = wholesaleItems
 
-		err := e.repo.SaveNomenclature(ctx, nomenclature, nil)
+		err := repo.SaveNomenclature(ctx, nomenclature, nil)
 		if err != nil {
-			return nil, err
+			repo.NewErrorNomenclatureId(ctx, i, "mtr")
 		}
+	}
+	return nil
+}
 
-		//nomenclatures = append(nomenclatures, nomenclature)
+func (e ExcelServiceImpl) SaveMTRExcelFile(ctx context.Context, file *multipart.FileHeader) (*models.ResponseMsg, error) {
+	src, err := file.Open()
+	if err != nil {
+		log.Errorf("failed ti open file: %v", err)
+		return nil, echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
-	//for _, v := range nomenclatures {
-	//	err := e.repo.SaveNomenclature(ctx, v, tx)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//}
+	defer src.Close()
+	fmt.Println("start")
+	excelFile, fileErr := excelize.OpenReader(src)
+	if fileErr != nil {
+		log.Errorf("failed to open reader: %v", fileErr)
+		return nil, echo.NewHTTPError(http.StatusBadRequest, fileErr)
+	}
+
+	// Get all the rows in the Sheet1.
+	rows, rowsErr := excelFile.GetRows("TDSheet")
+	if rowsErr != nil {
+		log.Errorf("failed to read sheet: %v", rowsErr)
+		return nil, echo.NewHTTPError(http.StatusBadRequest, "Не правильный наименование страницы excel файла. Переименуйте на Лист1")
+	}
+
+	newMtrErr := NewMTRFile(rows, e.repo, ctx)
+	if newMtrErr != nil {
+		return nil, newMtrErr
+	}
 
 	return &models.ResponseMsg{Message: "success"}, nil
 }
@@ -694,12 +696,6 @@ func (e ExcelServiceImpl) SaveOrganizerNomenclature(ctx context.Context, file *m
 		}
 	}(ctx)
 
-	//var nomenclatures []*models.Nomenclature
-	for _, v := range rows[0] {
-		fmt.Println(v)
-	}
-	return nil, nil
-
 	if orgRepErr := newOrgranizerNomenclature(rows, e.repo, ctx); orgRepErr != nil {
 		return nil, err
 	}
@@ -747,7 +743,7 @@ func newOrgranizerNomenclature(rows [][]string, repo repository.ExcelRepository,
 		if len(row[11]) > 3 {
 			nomenclature.UserId = row[11]
 		} else {
-			nomenclature.UserId = "Supplier"
+			nomenclature.UserId = "Organizer"
 		}
 
 		// if len(row[10]) > 9 {
@@ -820,7 +816,7 @@ func newOrgranizerNomenclature(rows [][]string, repo repository.ExcelRepository,
 		err := repo.SaveNomenclature(ctx, nomenclature, nil)
 		if err != nil {
 			log.Error(err)
-			repo.NewErrorNomenclatureId(ctx, i)
+			repo.NewErrorNomenclatureId(ctx, i, "organizer_nomenclature")
 		}
 	}
 	return nil
@@ -1149,7 +1145,6 @@ func (e ExcelServiceImpl) SaveNomenclatureFromDirectus(ctx context.Context, req 
 		log.Errorf("failed to read sheet: %v", rowsErr)
 		return nil, echo.NewHTTPError(http.StatusBadRequest, "Не правильный наименование страницы excel файла. Переименуйте на Лист1")
 	}
-
 	inn, companyErr := e.repo.SelectCompanyInnById(ctx, req.Accounting.Company)
 	if companyErr != nil {
 		log.Errorf("failed to get company inn: %v", companyErr)
@@ -1162,16 +1157,31 @@ func (e ExcelServiceImpl) SaveNomenclatureFromDirectus(ctx context.Context, req 
 		return nil, echo.NewHTTPError(http.StatusBadRequest, "Внутренняя ошибка")
 	}
 
-	orgNomErr := newSupplierNomenclature(rows, inn, priceLists, e.repo, ctx)
-	if orgNomErr != nil {
-		return nil, orgNomErr
+	if rows[0][10] == "ИНН" && rows[0][11] == "Поставщик" {
+		orgNomErr := newOrgranizerNomenclature(rows, e.repo, ctx)
+		if orgNomErr != nil {
+			return nil, orgNomErr
+		}
+		return &models.ResponseMsg{Message: "success"}, nil
+	} else if rows[0][6] == "Наименование" && rows[0][7] == "Артикул" && rows[0][8] == "Идентификатор" {
+		mtrErr := NewMTRFile(rows, e.repo, ctx)
+		if mtrErr != nil {
+			return nil, mtrErr
+		}
+		return &models.ResponseMsg{Message: "success"}, nil
+	} else if rows[0][0] == "Код СКМТР" && rows[0][1] == "КОД КС НСИ" && rows[0][2] == "Код АМТО" {
+		suppErr := newSupplierNomenclature(rows, e.repo, ctx)
+		if suppErr != nil {
+			return nil, suppErr
+		}
+		return &models.ResponseMsg{Message: "success"}, nil
 	}
 	err = e.repo.SetUploadStatus(ctx, req.Key, "processed")
 	if err != nil {
 		return nil, err
 	}
 
-	return nil, nil
+	return nil, echo.NewHTTPError(http.StatusBadRequest, "неправильный шаблон документа, обратитесь к нам")
 }
 
 // func (e ExcelServiceImpl) SaveCargoCatalogue(ctx context.Context, file *multipart.FileHeader) (*models.ResponseMsg, error) {

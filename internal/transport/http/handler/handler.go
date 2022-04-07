@@ -174,3 +174,18 @@ func (h *Handler) UploadExcelFile(c echo.Context) error {
 	log.Infof("success response: %v", res)
 	return c.JSON(http.StatusOK, res)
 }
+
+func (h *Handler) SaveNomenclatureFromDirectus(c echo.Context) error {
+	var req models.DirectusModel
+	if bErr := c.Bind(&req); bErr != nil {
+		log.Warn("bad request")
+		return echo.NewHTTPError(http.StatusBadRequest, bErr)
+	}
+
+	res, err := h.excelService.SaveNomenclatureFromDirectus(c.Request().Context(), &req)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, res)
+}

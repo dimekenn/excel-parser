@@ -44,11 +44,11 @@ func (e ExcelRepositoryImpl) NewUploadCatalogue(ctx context.Context, fileNameDis
 	}
 	return nil
 }
-func (e ExcelRepositoryImpl) NewErrorNomenclatureId(ctx context.Context, row_id int) error {
+func (e ExcelRepositoryImpl) NewErrorNomenclatureId(ctx context.Context, row_id int, fileName string) error {
 	_, err := e.lb.CallPrimaryPreferred().PGxPool().Exec(
 		ctx,
-		"insert into error_nomenclature_ids (row_id, file_name) values ($1, 'organizer_nomenclature')",
-		row_id,
+		"insert into error_nomenclature_ids (row_id, file_name) values ($1, $2)",
+		row_id, fileName,
 	)
 	if err != nil {
 		log.Error("failed to exec in NewErrorNomenclatureId: ", err)
