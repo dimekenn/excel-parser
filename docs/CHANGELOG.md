@@ -1,3 +1,10 @@
+## [1.21.7](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.21.6...v1.21.7) (2022-04-07)
+
+
+### Bug Fixes
+
+* Добавлено указание прайслиста для номенклатуры поставщика ([141bb14](http://gitlab.xplanet.int/xmarket/golang/parser/commit/141bb14c6553991e0b0c68c6675aba0f018352d0))
+
 ## [1.21.6](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.21.5...v1.21.6) (2022-04-07)
 
 
