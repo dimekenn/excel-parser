@@ -1,3 +1,10 @@
+## [1.21.3](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.21.2...v1.21.3) (2022-04-07)
+
+
+### Bug Fixes
+
+* Исправлено добавление номенклатуры поставщика ([4b0058f](http://gitlab.xplanet.int/xmarket/golang/parser/commit/4b0058f19a40ffbd5a5da870c0041ff9879a9bf6))
+
 ## [1.21.2](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.21.1...v1.21.2) (2022-04-07)
 
 
