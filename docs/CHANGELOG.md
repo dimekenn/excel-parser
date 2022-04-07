@@ -1,3 +1,10 @@
+## [1.21.2](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.21.1...v1.21.2) (2022-04-07)
+
+
+### Bug Fixes
+
+* Фиксы для демо ([4701ac3](http://gitlab.xplanet.int/xmarket/golang/parser/commit/4701ac342b527c2f0f0d5104f01e188e906e92e0))
+
 ## [1.21.1](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.21.0...v1.21.1) (2022-04-07)
 
 
