@@ -175,6 +175,17 @@ func (h *Handler) UploadExcelFile(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
+// SaveNomenclatureFromDirectus godoc
+// @Summary      porecess excel file from directus
+// @Description  accepts and returns json object
+// @Accept       json
+// @Produce      json
+// @Param        order body models.DirectusModel true "req"
+// @Success      200  {object}  models.ResponseMsg
+// @Failure      400  {object}  models.ResponseMsg
+// @Failure      404  {object}  models.ResponseMsg
+// @Failure      500  {object}  models.ResponseMsg
+// @Router       /api/v1/hook [post]
 func (h *Handler) SaveNomenclatureFromDirectus(c echo.Context) error {
 	var req models.DirectusModel
 	if bErr := c.Bind(&req); bErr != nil {

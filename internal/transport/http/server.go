@@ -11,7 +11,8 @@ import (
 	"net/http"
 	"os"
 	"time"
-
+	_ "excel-service/docs"
+	echoSwagger "github.com/swaggo/echo-swagger"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
@@ -68,6 +69,7 @@ func StartHTTPServer(ctx context.Context, errCh chan<- error) {
 	app.POST("api/v1/upload/aws/object", srvHandler.GetExcelFromAwsByFileId)
 	app.POST("api/v1/upload/file/excel", srvHandler.UploadExcelFile)
 	app.POST("api/v1/hook", srvHandler.SaveNomenclatureFromDirectus)
+	app.GET("api/v1/swagger/*", echoSwagger.WrapHandler)
 	
 	app.POST("dimeken", dimeken)
 

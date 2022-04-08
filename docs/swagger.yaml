@@ -1,0 +1,85 @@
+definitions:
+  models.DirectusModel:
+    properties:
+      accountability:
+        properties:
+          company:
+            type: string
+          role:
+            type: string
+          user:
+            type: string
+        type: object
+      collection:
+        type: string
+      key:
+        type: string
+    type: object
+  models.ResponseMsg:
+    properties:
+      message:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /api/v1/hook:
+    post:
+      consumes:
+      - application/json
+      description: accepts and returns json object
+      parameters:
+      - description: req
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/models.DirectusModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResponseMsg'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ResponseMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ResponseMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ResponseMsg'
+      summary: porecess excel file from directus
+  /api/v1/upload/excel:
+    post:
+      consumes:
+      - multipart/form-data
+      description: accept multipart/form-data returns json struct
+      parameters:
+      - description: file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResponseMsg'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ResponseMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ResponseMsg'
+      summary: Parsing excel file from supplier
+swagger: "2.0"

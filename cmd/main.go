@@ -6,10 +6,22 @@ import (
 	"fmt"
 	"log"
 	"os"
+	_ "excel-service/docs"
 	"os/signal"
 	"syscall"
 )
 
+// @title           excel-service swagger
+// @version         1.0
+// @description     This is a sample to parse excel files.
+
+// @contact.name   Dinmukhamed Nurbekov
+// @contact.email  nurbekovDR@xplanet.ru
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host      api.stage.xplanet.int/parser/
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
