@@ -241,10 +241,10 @@ func (e ExcelRepositoryImpl) SaveNomenclature(ctx context.Context, nomenclature 
 			ctx,
 			//"insert into nomenclature (id, code_skmtr, code_ks_nsi, code_amto, okpd2, code_tnved, name, tmc_code_vendor, tmc_mark, date_of_manufacture, manufacturer, is_tax, tax_percentage, price_per_unit, measurement, price_valid_through, wholesale_price_per_unit, wholesale_order_from, wholesale_order_to, quantity, product_availability, hazard_class, packaging_type, packing_material, storage_type, weight_netto, weight_brutto, loading_type, warehouse_address, regions, delivery_type) values " +
 			//	"($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, (select id from measurement where name = $15), $16, $17, $18, $19, $20, $21, (select id from hazard_class where name = $22), (select id from packaging_type where name = $23), (select id from packing_material  where name = $24), (select id from storage_type where name = $25), $26, $27, (select id from loading_type  where name = $28), $29,(select id from regions where name = $30), (select id from delivery_type where name = $31)) returning id",
-			"with nom as (insert into nomenclature (id, payload, drawing_name, category, link, company, currency, owner_role, code_skmtr, code_ks_nsi, code_amto, okpd2, code_tnved, name, tmc_code_vendor, tmc_mark, gost_tu, date_of_manufacture, manufacturer, batch_number, is_tax, tax_percentage, price_per_unit, measurement, price_valid_through, wholesale_items, quantity, product_availability,  loading_type, regions, delivery_type) "+
-				"values ($1, $38, $39, (select id from category where name = $40),  $41, (select id from currency where code = 'RUB'), $2, $3, $4, $5, $6, $7, $8, $9, $10,  $11, $12, $13,  $14, $15, $16, (select id from measurement where value = $17), $18, $19, $20, $21, (select id from loading_type  where name = $22), (select id from regions where name = $23), (select id from delivery_type where name = $24)) returning id), "+
+			"with nom as (insert into nomenclature (id, payload, drawing_name, category, company, currency, owner_role, code_skmtr, code_ks_nsi, code_amto, okpd2, code_tnved, name, tmc_code_vendor, tmc_mark, gost_tu, date_of_manufacture, manufacturer, batch_number, is_tax, tax_percentage, price_per_unit, measurement, price_valid_through, wholesale_items, quantity, product_availability,  loading_type, regions, delivery_type) "+
+				"values ($1, $38, $39, (select id from category where name = $40),  $41, (select id from currency where code = 'RUB'), (select role from directus_users where id = $42), $2, $3, $4, $5, $6, $7, $8, $9, $10,  $11, $12, $13,  $14, $15, $16, (select id from measurement where value = $17), $18, $19, $20, $21, (select id from loading_type  where name = $22), (select id from regions where name = $23), (select id from delivery_type where name = $24)) returning id), "+
 				"package as (insert into package(id, packaging_type, packing_material, name, storage_type, hazard_class, length, height, width, volume,  weight_brutto, weight_netto, amount_in_package, company) "+
-				"values ($25, (select id from packaging_type where name = $26), (select id from packing_material  where name = $27), $28, (select id from storage_type  where name = $29), (select id from hazard_class where name = $30), $31, $32, $33, $34, $35, $36, $37, (select id from company where inn = $41)) returning id) insert into nomenclature_package ( nomenclature_id, package_id) values ((select id from nom), (select id from package))",
+				"values ($25, (select id from packaging_type where name = $26), (select id from packing_material  where name = $27), $28, (select id from storage_type  where name = $29), (select id from hazard_class where name = $30), $31, $32, $33, $34, $35, $36, $37, $41) returning id) insert into nomenclature_package ( nomenclature_id, package_id) values ((select id from nom), (select id from package))",
 			nomenclature.Id,
 			newNullString(nomenclature.CodeSkmtr),
 			newNullString(nomenclature.CodeKsNsi),
@@ -285,8 +285,8 @@ func (e ExcelRepositoryImpl) SaveNomenclature(ctx context.Context, nomenclature 
 			nomenclature.Payload,
 			nomenclature.DrawingName,
 			nomenclature.CategoryName,
-			nomenclature.Link,
-			nomenclature.CompanyInn,
+			companyId,
+			userId,
 		)
 
 		if execErr != nil {
@@ -299,6 +299,32 @@ func (e ExcelRepositoryImpl) SaveNomenclature(ctx context.Context, nomenclature 
 			return echo.NewHTTPError(http.StatusInternalServerError, execErr)
 		}
 		fmt.Println("insert into db success with package")
+		if len(nomenclature.PriceLists) > 0 {
+			for _, price := range nomenclature.PriceLists {
+				_, execErr := e.lb.CallPrimaryPreferred().PGxPool().Exec(
+					ctx,
+					"insert into price_nomenclature (price_id, nomenclature_id) values ($1, $2)",
+					price,
+					nomenclature.Id,
+				)
+
+				if execErr != nil {
+					//rbErr := tx.Rollback(ctx)
+					//if rbErr != nil {
+					//	log.Errorf("failed to roll back tx in SaveNomenclature: %v", rbErr)
+					//	return echo.NewHTTPError(http.StatusInternalServerError, rbErr)
+					//}
+					log.Errorf("failed to insert nomenclature price list: %v", execErr)
+					return echo.NewHTTPError(http.StatusInternalServerError, execErr)
+				}
+
+			}
+
+			fmt.Println("insert into db success")
+			return nil
+
+		}
+
 		return nil
 	}
 
@@ -308,7 +334,7 @@ func (e ExcelRepositoryImpl) SaveNomenclature(ctx context.Context, nomenclature 
 			//"insert into nomenclature (id, code_skmtr, code_ks_nsi, code_amto, okpd2, code_tnved, name, tmc_code_vendor, tmc_mark, date_of_manufacture, manufacturer, is_tax, tax_percentage, price_per_unit, measurement, price_valid_through, wholesale_price_per_unit, wholesale_order_from, wholesale_order_to, quantity, product_availability, hazard_class, packaging_type, packing_material, storage_type, weight_netto, weight_brutto, loading_type, warehouse_address, regions, delivery_type) values " +
 			//	"($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, (select id from measurement where name = $15), $16, $17, $18, $19, $20, $21, (select id from hazard_class where name = $22), (select id from packaging_type where name = $23), (select id from packing_material  where name = $24), (select id from storage_type where name = $25), $26, $27, (select id from loading_type  where name = $28), $29,(select id from regions where name = $30), (select id from delivery_type where name = $31)) returning id",
 			"insert into nomenclature (id, payload, drawing_name, category, company, currency, owner_role, code_skmtr, code_ks_nsi, code_amto, okpd2, code_tnved, name, tmc_code_vendor, tmc_mark, gost_tu, date_of_manufacture, manufacturer, batch_number, is_tax, tax_percentage, price_per_unit, measurement, price_valid_through, wholesale_items, quantity, product_availability,  loading_type, regions, delivery_type) "+
-				"values ($1, $25, $26, (select id from category where name = $27), (select id from company where inn = $28), (select id from currency where code = 'RUB'), (select role from directus_users where first_name = $29), $2, $3, $4, (select id from okpd2 where combined like $5), $6, $7, $8, $9, $10,  $11, $12, $13,  $14, $15, $16, (select id from measurement where value = $17), $18, $19, $20, $21, (select id from loading_type  where name = $22), (select id from regions where name = $23), (select id from delivery_type where name = $24))",
+				"values ($1, $25, $26, (select id from category where name = $27),  $28, (select id from currency where code = 'RUB'), (select role from directus_users where id = $29), $2, $3, $4, (select id from okpd2 where code = $5), $6, $7, $8, $9, $10,  $11, $12, $13,  $14, $15, $16, (select id from measurement where value = $17), $18, $19, $20, $21, (select id from loading_type  where name = $22), (select id from regions where name = $23), (select id from delivery_type where name = $24))",
 			nomenclature.Id,
 			newNullString(nomenclature.CodeSkmtr),
 			newNullString(nomenclature.CodeKsNsi),
@@ -336,9 +362,8 @@ func (e ExcelRepositoryImpl) SaveNomenclature(ctx context.Context, nomenclature 
 			nomenclature.OrganizerNomenclature,
 			nomenclature.DrawingName,
 			nomenclature.CategoryName,
-			nomenclature.Link,
-			nomenclature.CompanyInn,
-			nomenclature.UserId,
+			companyId,
+			userId,
 		)
 
 		if execErr != nil {
@@ -365,6 +390,7 @@ func (e ExcelRepositoryImpl) SaveNomenclature(ctx context.Context, nomenclature 
 			"category,"+
 			"company, "+
 			"currency, "+
+			"owner_role, "+
 			"code_skmtr, "+
 			"code_ks_nsi, "+
 			"code_amto, "+
@@ -393,12 +419,13 @@ func (e ExcelRepositoryImpl) SaveNomenclature(ctx context.Context, nomenclature 
 			"$25, "+
 			"$26, "+
 			"(select id from category where name = $27),"+
-			"(select id from company where inn = $28), "+
+			"$28, "+
 			"(select id from currency where code = 'RUB'), "+
+			"(select role from directus_users where id = $29), "+
 			"$2, "+ // nomenclature.CodeSkmtr
 			"$3, "+ // nomenclature.CodeKsNsi
 			"$4, "+ // nomenclature.CodeAmto
-			"$5, "+ // nomenclature.OKPD2
+			"(select id from okpd2 where code = $5), "+ // nomenclature.OKPD2
 			"$6, "+ // nomenclature.CodeTnved
 			"$7, "+ // nomenclature.Name
 			"$8, "+ // nomenclature.TmcCodeVendor
@@ -446,7 +473,8 @@ func (e ExcelRepositoryImpl) SaveNomenclature(ctx context.Context, nomenclature 
 		nomenclature.Payload,
 		nomenclature.DrawingName,
 		nomenclature.CategoryName,
-		nomenclature.CompanyInn,
+		companyId,
+		userId,
 	)
 
 	if execErr != nil {
@@ -565,7 +593,7 @@ func (e ExcelRepositoryImpl) SaveArrayNomenclature(ctx context.Context, nomencla
 	vals := []interface{}{}
 
 	for _, nomenclature := range nomenclatures {
-		sqlStr += " (?, ?, ?, ?, (select id from okpd2 where combined like ?), ?, ?, ?, ?, ?,  ?, ?, ?,  ?, ?, ?, (select id from measurement where value = ?), ?, ?, ?, ?, (select id from loading_type  where name = ?), (select id from regions where name = ?), (select id from delivery_type where name = ?), ?, ?, (select id from category where name = ?), ?, (select id from company where inn = ?), (select id from directus_users where first_name =?), (select id from currency where code = 'RUB')),"
+		sqlStr += " (?, ?, ?, ?, (select id from okpd2 where code = ?), ?, ?, ?, ?, ?,  ?, ?, ?,  ?, ?, ?, (select id from measurement where value = ?), ?, ?, ?, ?, (select id from loading_type  where name = ?), (select id from regions where name = ?), (select id from delivery_type where name = ?), ?, ?, (select id from category where name = ?), ?, (select id from company where inn = ?), (select id from directus_users where first_name =?), (select id from currency where code = 'RUB')),"
 		vals = append(vals, nomenclature.Id, newNullString(nomenclature.CodeSkmtr), newNullString(nomenclature.CodeKsNsi), newNullString(nomenclature.CodeAmto), newNullString(nomenclature.OKPD2), nomenclature.CodeTnved, nomenclature.Name, newNullString(nomenclature.TmcCodeVendor), newNullString(nomenclature.TmcMark), newNullString(nomenclature.GostTu), newNullString(nomenclature.DateOfManufacture), newNullString(nomenclature.Manufacturer), newNullString(nomenclature.BatchNumber), nomenclature.IsTax, newNullFloat(nomenclature.TaxPercentage), newNullFloat(nomenclature.PricePerUnit), nomenclature.Measurement, newNullString(nomenclature.PriceValidThrough), nomenclature.WholesaleItems, newNullInt(nomenclature.Quantity), nomenclature.ProductAvailability, nomenclature.LoadingType, nomenclature.Regions, nomenclature.DeliveryType, nomenclature.OrganizerNomenclature, nomenclature.DrawingName, nomenclature.CategoryName, nomenclature.Link, nomenclature.CompanyInn, nomenclature.UserId)
 	}
 	//trim the last

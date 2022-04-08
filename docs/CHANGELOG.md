@@ -1,3 +1,52 @@
+## [1.21.7](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.21.6...v1.21.7) (2022-04-07)
+
+
+### Bug Fixes
+
+* Добавлено указание прайслиста для номенклатуры поставщика ([141bb14](http://gitlab.xplanet.int/xmarket/golang/parser/commit/141bb14c6553991e0b0c68c6675aba0f018352d0))
+
+## [1.21.6](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.21.5...v1.21.6) (2022-04-07)
+
+
+### Bug Fixes
+
+* Изменен способ поиска ОКПД2 ([cee5a3c](http://gitlab.xplanet.int/xmarket/golang/parser/commit/cee5a3c610ae39cf496433a7660ca3849e571ed8))
+
+## [1.21.5](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.21.4...v1.21.5) (2022-04-07)
+
+
+### Bug Fixes
+
+* Исправлен парсинг ОКПД2 ([017c3b2](http://gitlab.xplanet.int/xmarket/golang/parser/commit/017c3b25a4ade8d3aea1641f9ea1d2bc0ce49093))
+
+## [1.21.4](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.21.3...v1.21.4) (2022-04-07)
+
+
+### Bug Fixes
+
+* Убрано использование link ([4f4a5cd](http://gitlab.xplanet.int/xmarket/golang/parser/commit/4f4a5cdff77f0855a45cbccb91f4ea4869a2dd3e))
+
+## [1.21.3](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.21.2...v1.21.3) (2022-04-07)
+
+
+### Bug Fixes
+
+* Исправлено добавление номенклатуры поставщика ([4b0058f](http://gitlab.xplanet.int/xmarket/golang/parser/commit/4b0058f19a40ffbd5a5da870c0041ff9879a9bf6))
+
+## [1.21.2](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.21.1...v1.21.2) (2022-04-07)
+
+
+### Bug Fixes
+
+* Фиксы для демо ([4701ac3](http://gitlab.xplanet.int/xmarket/golang/parser/commit/4701ac342b527c2f0f0d5104f01e188e906e92e0))
+
+## [1.21.1](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.21.0...v1.21.1) (2022-04-07)
+
+
+### Bug Fixes
+
+* Закостылен поиск шаблона ([e1a4d74](http://gitlab.xplanet.int/xmarket/golang/parser/commit/e1a4d74cb0fc5679c566089b552123a033c950cd))
+
 # [1.21.0](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.20.0...v1.21.0) (2022-04-07)
 
 
