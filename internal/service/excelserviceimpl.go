@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -61,7 +62,7 @@ func (e ExcelServiceImpl) SaveExcelFile(ctx context.Context, file *multipart.Fil
 	return &models.ResponseMsg{Message: "success"}, nil
 }
 
-func newSupplierNomenclature(rows [][]string, repo repository.ExcelRepository, ctx context.Context, userId, companyId string) error {
+func newSupplierNomenclature(rows [][]string, companyInn string, priceLists []string, repo repository.ExcelRepository, ctx context.Context) error {
 	for i, row := range rows {
 		if i == 0 || i == 1 {
 			continue
@@ -81,6 +82,7 @@ func newSupplierNomenclature(rows [][]string, repo repository.ExcelRepository, c
 		nomenclature.DateOfManufacture = row[10]
 		nomenclature.Manufacturer = row[11]
 		nomenclature.BatchNumber = row[12]
+		nomenclature.CompanyInn = companyInn
 		if row[13] == "облагается" {
 			nomenclature.IsTax = true
 		}
@@ -91,6 +93,10 @@ func newSupplierNomenclature(rows [][]string, repo repository.ExcelRepository, c
 			} else {
 				nomenclature.TaxPercentage = float32(taxPercentage)
 			}
+		}
+
+		if len(priceLists) > 0 {
+			nomenclature.PriceLists = priceLists
 		}
 
 		pricePerUnit, unitPriceErr := strconv.ParseFloat(row[15], 8)
@@ -971,11 +977,15 @@ func (e ExcelServiceImpl) UploadExcelFile(ctx context.Context, file *multipart.F
 }
 
 func (e ExcelServiceImpl) SaveNomenclatureFromDirectus(ctx context.Context, req *models.DirectusModel) (*models.ResponseMsg, error) {
-	if req.Collection == "uploads" {
+	if req.Collection != "uploads" {
 		log.Warnf("collection is %s not uploads", req.Collection)
 		return nil, echo.NewHTTPError(http.StatusBadRequest, "collection is not uploads")
 	}
-
+	err := e.repo.SetUploadStatus(ctx, req.Key, "processing")
+	if err != nil {
+		return nil, err
+	}
+	time.Sleep(15 * time.Second) // todo удалить после демо 8.10
 	upload, uploadErr := e.repo.GetFromUploadCatalogue(ctx, req.Key)
 	if uploadErr != nil {
 		return nil, uploadErr
@@ -1011,10 +1021,7 @@ func (e ExcelServiceImpl) SaveNomenclatureFromDirectus(ctx context.Context, req 
 		return nil, echo.NewHTTPError(http.StatusBadRequest, fileErr)
 	}
 
-	fmt.Println(excelFile.GetSheetList())
-	// Get all the rows in the Sheet1.
-
-	rows, rowsErr := excelFile.GetRows("Лист1")
+	rows, rowsErr := excelFile.GetRows(excelFile.GetSheetList()[0])
 
 	if rowsErr != nil {
 		log.Errorf("failed to read sheet: %v", rowsErr)
@@ -1034,11 +1041,29 @@ func (e ExcelServiceImpl) SaveNomenclatureFromDirectus(ctx context.Context, req 
 		}
 		return &models.ResponseMsg{Message: "success"}, nil
 	} else if rows[0][0] == "Код СКМТР" && rows[0][1] == "КОД КС НСИ" && rows[0][2] == "Код АМТО" {
-		suppErr := newSupplierNomenclature(rows, e.repo, ctx, upload.UserId, upload.CompanyId)
+
+		inn, companyErr := e.repo.SelectCompanyInnById(ctx, req.Accounting.Company)
+		if companyErr != nil {
+			log.Errorf("failed to get company inn: %v", companyErr)
+			return nil, echo.NewHTTPError(http.StatusBadRequest, "Внутренняя ошибка")
+		}
+
+		priceLists, priceListErr := e.repo.SelectPriceListsByUploadId(ctx, req.Key)
+		if priceListErr != nil {
+			log.Errorf("failed to get price lists: %v", priceListErr)
+			return nil, echo.NewHTTPError(http.StatusBadRequest, "Внутренняя ошибка")
+		}
+
+		suppErr := newSupplierNomenclature(rows, inn, priceLists, e.repo, ctx)
 		if suppErr != nil {
 			return nil, suppErr
 		}
 		return &models.ResponseMsg{Message: "success"}, nil
+	}
+
+	err = e.repo.SetUploadStatus(ctx, req.Key, "processed")
+	if err != nil {
+		return nil, err
 	}
 
 	return nil, echo.NewHTTPError(http.StatusBadRequest, "неправильный шаблон документа, обратитесь к нам")

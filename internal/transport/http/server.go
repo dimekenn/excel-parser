@@ -68,6 +68,7 @@ func StartHTTPServer(ctx context.Context, errCh chan<- error) {
 	app.POST("api/v1/upload/aws/object", srvHandler.GetExcelFromAwsByFileId)
 	app.POST("api/v1/upload/file/excel", srvHandler.UploadExcelFile)
 	app.POST("api/v1/hook", srvHandler.SaveNomenclatureFromDirectus)
+	
 	app.POST("dimeken", dimeken)
 
 	errCh <- app.Start(cfg.Port)
