@@ -201,6 +201,17 @@ func (h *Handler) SaveNomenclatureFromDirectus(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
+// GetFileColumns godoc
+// @Summary      porecess excel file from directus
+// @Description  accepts and returns json object
+// @Accept       json
+// @Produce      json
+// @Param        order body models.DirectusModel true "req"
+// @Success      200  {object}  models.FileColumns
+// @Failure      400  {object}  models.ResponseMsg
+// @Failure      404  {object}  models.ResponseMsg
+// @Failure      500  {object}  models.ResponseMsg
+// @Router       /api/v1/getColumns [post]
 func (h *Handler) GetFileColumns(c echo.Context) error {
 	var req models.DirectusModel
 	if bErr := c.Bind(&req); bErr != nil {

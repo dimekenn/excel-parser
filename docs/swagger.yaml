@@ -15,6 +15,13 @@ definitions:
       key:
         type: string
     type: object
+  models.FileColumns:
+    properties:
+      row_id:
+        type: integer
+      row_name:
+        type: string
+    type: object
   models.ResponseMsg:
     properties:
       message:
@@ -23,6 +30,38 @@ definitions:
 info:
   contact: {}
 paths:
+  /api/v1/getColumns:
+    post:
+      consumes:
+      - application/json
+      description: accepts and returns json object
+      parameters:
+      - description: req
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/models.DirectusModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.FileColumns'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ResponseMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ResponseMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ResponseMsg'
+      summary: porecess excel file from directus
   /api/v1/hook:
     post:
       consumes:

@@ -4,6 +4,55 @@
         "contact": {}
     },
     "paths": {
+        "/api/v1/getColumns": {
+            "post": {
+                "description": "accepts and returns json object",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "porecess excel file from directus",
+                "parameters": [
+                    {
+                        "description": "req",
+                        "name": "order",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.DirectusModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.FileColumns"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/hook": {
             "post": {
                 "description": "accepts and returns json object",
@@ -117,6 +166,17 @@
                     "type": "string"
                 },
                 "key": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.FileColumns": {
+            "type": "object",
+            "properties": {
+                "row_id": {
+                    "type": "integer"
+                },
+                "row_name": {
                     "type": "string"
                 }
             }
