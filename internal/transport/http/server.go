@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"os"
 	"time"
-	_ "excel-service/docs"
 	echoSwagger "github.com/swaggo/echo-swagger"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
@@ -78,7 +77,7 @@ func StartHTTPServer(ctx context.Context, errCh chan<- error) {
 func dimeken(c echo.Context) error {
 	res, _ := io.ReadAll(c.Request().Body)
 	fmt.Println(string(res))
-	return c.JSON(http.StatusOK, nil)
+	return c.JSON(http.StatusOK, nil) ц
 }
 
 func InitDBX(ctx context.Context, url string) (*pgxpool.Pool, error) {
