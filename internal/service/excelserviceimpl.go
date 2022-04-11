@@ -983,7 +983,7 @@ func (e ExcelServiceImpl) SaveNomenclatureFromDirectus(ctx context.Context, req 
 		return nil, err
 	}
 	//time.Sleep(15 * time.Second) // todo удалить после демо 8.10
-	upload, uploadErr := e.repo.GetFromUploadCatalogue(ctx, req.Key)
+	uploads, uploadErr := e.repo.GetFromUploadCatalogue(ctx, req.Key)
 	if uploadErr != nil {
 		log.Warnf("failed to get upload catalog", uploadErr)
 		return nil, uploadErr
@@ -1005,10 +1005,26 @@ func (e ExcelServiceImpl) SaveNomenclatureFromDirectus(ctx context.Context, req 
 		return nil, echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
+	for _, upload := range uploads{
+		_, err := processFiles(minioClient, ctx, bucket, upload, req, e.repo)
+		if err != nil{
+			return nil, err
+		}
+	}
+	// err = e.repo.SetUploadStatus(ctx, req.Key, "processed")
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	log.Errorf("failed to find correct template")
+	return nil, echo.NewHTTPError(http.StatusBadRequest, "неправильный шаблон документа, обратитесь к нам")
+}
+
+func processFiles(minioClient *minio.Client, ctx context.Context, bucket string, upload *models.UploadsEntity, req *models.DirectusModel, repo repository.ExcelRepository) (*models.ResponseMsg, error){
 	minioObj, getObjErr := minioClient.GetObject(ctx, bucket, upload.FileId, minio.GetObjectOptions{})
 	if getObjErr != nil {
 		log.Error("failed to get object:", getObjErr)
-		return nil, echo.NewHTTPError(http.StatusInternalServerError, getObjErr)
+		return nil, echo.NewHTTPError(http.StatusBadRequest, upload.FileId+"does not exists")
 	}
 
 	defer minioObj.Close()
@@ -1027,44 +1043,47 @@ func (e ExcelServiceImpl) SaveNomenclatureFromDirectus(ctx context.Context, req 
 	}
 
 	if rows[0][10] == "ИНН" && rows[0][11] == "Поставщик" {
-		orgNomErr := newOrgranizerNomenclature(rows, e.repo, ctx, upload.UserId, upload.CompanyId)
+		orgNomErr := newOrgranizerNomenclature(rows, repo, ctx, upload.UserId, upload.CompanyId)
 		if orgNomErr != nil {
 			log.Errorf("failed parse: %v", orgNomErr)
 			return nil, orgNomErr
 		}
 		return &models.ResponseMsg{Message: "success"}, nil
+
 	} else if rows[0][6] == "Наименование" && rows[0][7] == "Артикул" && rows[0][8] == "Идентификатор" {
-		mtrErr := NewMTRFile(rows, e.repo, ctx, upload.UserId, upload.CompanyId)
+
+		mtrErr := NewMTRFile(rows, repo, ctx, upload.UserId, upload.CompanyId)
 		if mtrErr != nil {
 			log.Errorf("failed parse: %v", mtrErr)
 			return nil, mtrErr
 		}
-		err = e.repo.SetUploadStatus(ctx, req.Key, "processed")
+		err := repo.SetUploadStatus(ctx, req.Key, "processed")
 		if err != nil {
 			log.Errorf("failed to set upload status: %v", fileErr)
 			return nil, echo.NewHTTPError(http.StatusInternalServerError, "Внутренняя ошибка")
 		}
-
 		return &models.ResponseMsg{Message: "success"}, nil
-	} else {
+
+	} else if rows[0][0] == "Код СКМТР" && rows[0][1] == "КОД КС НСИ" && rows[0][2] == "Код АМТО" {
+
 		// inn, companyErr := e.repo.SelectCompanyInnById(ctx, req.Accounting.Company)
 		// if companyErr != nil {
 		// 	log.Errorf("failed to get company inn: %v", companyErr)
 		// 	return nil, echo.NewHTTPError(http.StatusBadRequest, "Внутренняя ошибка")
 		// }
 
-		priceLists, priceListErr := e.repo.SelectPriceListsByUploadId(ctx, req.Key)
+		priceLists, priceListErr := repo.SelectPriceListsByUploadId(ctx, req.Key)
 		if priceListErr != nil {
 			log.Errorf("failed to get price lists: %v", priceListErr)
-			return nil, echo.NewHTTPError(http.StatusBadRequest, "Внутренняя ошибка")
+			return  nil, echo.NewHTTPError(http.StatusBadRequest, "Внутренняя ошибка")
 		}
 
-		suppErr := newSupplierNomenclature(rows, priceLists, e.repo, ctx, upload.CompanyId, upload.UserId)
+		suppErr := newSupplierNomenclature(rows, priceLists, repo, ctx, upload.CompanyId, upload.UserId)
 		if suppErr != nil {
 			log.Errorf("failed parse: %v", suppErr)
 			return nil, echo.NewHTTPError(http.StatusInternalServerError, "Внутренняя ошибка")
 		}
-		err = e.repo.SetUploadStatus(ctx, req.Key, "processed")
+		err := repo.SetUploadStatus(ctx, req.Key, "processed")
 		if err != nil {
 			log.Errorf("failed to set upload status: %v", fileErr)
 			return nil, echo.NewHTTPError(http.StatusInternalServerError, "Внутренняя ошибка")
@@ -1072,12 +1091,6 @@ func (e ExcelServiceImpl) SaveNomenclatureFromDirectus(ctx context.Context, req 
 
 		return &models.ResponseMsg{Message: "success"}, nil
 	}
-
-	// err = e.repo.SetUploadStatus(ctx, req.Key, "processed")
-	// if err != nil {
-	// 	return nil, err
-	// }
-
 	log.Errorf("failed to find correct template")
 	return nil, echo.NewHTTPError(http.StatusBadRequest, "неправильный шаблон документа, обратитесь к нам")
 }
@@ -1094,7 +1107,7 @@ func (e ExcelServiceImpl) GetFileColumns(ctx context.Context, req *models.Direct
 	// 	return nil, err
 	// }
 	//time.Sleep(15 * time.Second) // todo удалить после демо 8.10
-	upload, uploadErr := e.repo.GetFromUploadCatalogue(ctx, req.Key)
+	_, uploadErr := e.repo.GetFromUploadCatalogue(ctx, req.Key)
 	if uploadErr != nil {
 		log.Warnf("failed to get upload catalog", uploadErr)
 		return nil, uploadErr
@@ -1116,7 +1129,7 @@ func (e ExcelServiceImpl) GetFileColumns(ctx context.Context, req *models.Direct
 		return nil, echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	minioObj, getObjErr := minioClient.GetObject(ctx, bucket, upload.FileId, minio.GetObjectOptions{})
+	minioObj, getObjErr := minioClient.GetObject(ctx, bucket, "upload.FileId", minio.GetObjectOptions{})
 	if getObjErr != nil {
 		log.Error("failed to get object:", getObjErr)
 		return nil, echo.NewHTTPError(http.StatusInternalServerError, getObjErr)
