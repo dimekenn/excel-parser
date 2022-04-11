@@ -77,7 +77,7 @@ func StartHTTPServer(ctx context.Context, errCh chan<- error) {
 func dimeken(c echo.Context) error {
 	res, _ := io.ReadAll(c.Request().Body)
 	fmt.Println(string(res))
-	return c.JSON(http.StatusOK, nil) ц
+	return c.JSON(http.StatusOK, nil)
 }
 
 func InitDBX(ctx context.Context, url string) (*pgxpool.Pool, error) {
