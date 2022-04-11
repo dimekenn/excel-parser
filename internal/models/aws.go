@@ -13,6 +13,18 @@ type DirectusModel struct {
 		Company string `json:"company"`
 		Role    string `json:"role"`
 	} `json:"accountability"`
+	Payload struct {
+		Files struct {
+			DirectusFilesId []struct {
+				Id string `json:"id"`
+			} `json:"directus_files_id"`
+		} `json:"files"`
+		Catalogs struct {
+			CatalogId []struct {
+				Id string `json:"id"`
+			} `json:"catalog_id"`
+		} `json:"catalogs"`
+	} `json:"payload"`
 }
 
 type UploadsEntity struct {

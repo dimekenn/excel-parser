@@ -18,18 +18,28 @@ type ExcelRepositoryImpl struct {
 	lb *container.LoadBalancer
 }
 
-func (e ExcelRepositoryImpl) GetFromUploadCatalogue(ctx context.Context, id string) (*models.UploadsEntity, error) {
-	uploadEntity := &models.UploadsEntity{}
-	err := e.lb.CallPrimaryPreferred().PGxPool().QueryRow(
+func (e ExcelRepositoryImpl) GetFromUploadCatalogue(ctx context.Context, id string) ([]*models.UploadsEntity, error) {
+	rows, err := e.lb.CallPrimaryPreferred().PGxPool().Query(
 		ctx,
 		"select u.company, df.filename_disk, du.id from uploads u join uploads_files uf on uf.uploads_id = u.id join directus_files df on df.id = uf.directus_files_id join directus_users du on du.company = u.company where u.id = $1",
 		id,
-	).Scan(&uploadEntity.CompanyId, &uploadEntity.FileId, &uploadEntity.UserId)
+	)
 	if err != nil {
 		log.Error("failed to query row in GetFromUploadCatalogue: ", err)
 		return nil, echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
-	return uploadEntity, nil
+
+	var uploads []*models.UploadsEntity
+	for rows.Next(){
+		uploadEntity := &models.UploadsEntity{}
+		scErr := rows.Scan(&uploadEntity.CompanyId, &uploadEntity.FileId, &uploadEntity.UserId)
+		if scErr != nil {
+			log.Errorf("failed to scan object in GetFromUploadCatalogue: ", scErr)
+			return nil, echo.NewHTTPError(http.StatusInternalServerError, scErr)
+		}
+		uploads = append(uploads, uploadEntity)
+	}
+	return uploads, nil
 }
 
 func (e ExcelRepositoryImpl) NewUploadCatalogue(ctx context.Context, fileNameDisc, fileNameDl, uploadedBy, companyId string, fileSize int64) error {
@@ -243,6 +253,7 @@ func (e ExcelRepositoryImpl) SaveNomenclature(ctx context.Context, nomenclature 
 			//	"($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, (select id from measurement where name = $15), $16, $17, $18, $19, $20, $21, (select id from hazard_class where name = $22), (select id from packaging_type where name = $23), (select id from packing_material  where name = $24), (select id from storage_type where name = $25), $26, $27, (select id from loading_type  where name = $28), $29,(select id from regions where name = $30), (select id from delivery_type where name = $31)) returning id",
 			"with nom as (insert into nomenclature (id, payload, drawing_name, category, company, currency, owner_role, code_skmtr, code_ks_nsi, code_amto, okpd2, code_tnved, name, tmc_code_vendor, tmc_mark, gost_tu, date_of_manufacture, manufacturer, batch_number, is_tax, tax_percentage, price_per_unit, measurement, price_valid_through, wholesale_items, quantity, product_availability,  loading_type, regions, delivery_type) "+
 				"values ($1, $38, $39, (select id from category where name = $40),  $41, (select id from currency where code = 'RUB'), (select role from directus_users where id = $42), $2, $3, $4, (select id from okpd2 where code = $5), $6, $7, $8, $9, $10,  $11, $12, $13,  $14, $15, $16, (select id from measurement where value = $17), $18, $19, $20, $21, (select id from loading_type  where name = $22), (select id from regions where name = $23), (select id from delivery_type where name = $24)) returning id), "+
+				"with catnom as(insert into catalogue_nomenclature(nomenclature_id, catalog_id) values ("+
 				"package as (insert into package(id, packaging_type, packing_material, name, storage_type, hazard_class, length, height, width, volume,  weight_brutto, weight_netto, amount_in_package, company) "+
 				"values ($25, (select id from packaging_type where name = $26), (select id from packing_material  where name = $27), $28, (select id from storage_type  where name = $29), (select id from hazard_class where name = $30), $31, $32, $33, $34, $35, $36, $37, $41) returning id) insert into nomenclature_package ( nomenclature_id, package_id) values ((select id from nom), (select id from package))",
 			nomenclature.Id,

@@ -24,5 +24,5 @@ type ExcelRepository interface {
 	SaveBanks(ctx context.Context, bik, name, cor_account, address string, tx pgx.Tx) error
 	NewErrorNomenclatureId(ctx context.Context, row_id int, fileName string) error
 	NewUploadCatalogue(ctx context.Context, fileNameDisc, fileNameDl, uploadedBy, companyId string, fileSize int64) error
-	GetFromUploadCatalogue(ctx context.Context, id string) (*models.UploadsEntity, error)
+	GetFromUploadCatalogue(ctx context.Context, id string) ([]*models.UploadsEntity, error)
 }
