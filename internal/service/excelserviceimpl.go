@@ -60,7 +60,7 @@ func (e ExcelServiceImpl) SaveExcelFile(ctx context.Context, file *multipart.Fil
 	return &models.ResponseMsg{Message: "success"}, nil
 }
 
-func newSupplierNomenclature(rows [][]string, companyInn string, priceLists []string, repo repository.ExcelRepository, ctx context.Context, companyId, userId string) error {
+func newSupplierNomenclature(rows [][]string, priceLists []string, repo repository.ExcelRepository, ctx context.Context, companyId, userId string) error {
 	for i, row := range rows {
 		if i == 0 || i == 1 {
 			continue
@@ -86,7 +86,7 @@ func newSupplierNomenclature(rows [][]string, companyInn string, priceLists []st
 		if len(row) > 12 {
 			nomenclature.BatchNumber = row[12]
 		}
-		nomenclature.CompanyInn = companyInn
+		//nomenclature.CompanyInn = companyInn
 		if len(row) > 13 && row[13] == "облагается" {
 			nomenclature.IsTax = true
 		}
@@ -1047,11 +1047,11 @@ func (e ExcelServiceImpl) SaveNomenclatureFromDirectus(ctx context.Context, req 
 
 		return &models.ResponseMsg{Message: "success"}, nil
 	} else {
-		inn, companyErr := e.repo.SelectCompanyInnById(ctx, req.Accounting.Company)
-		if companyErr != nil {
-			log.Errorf("failed to get company inn: %v", companyErr)
-			return nil, echo.NewHTTPError(http.StatusBadRequest, "Внутренняя ошибка")
-		}
+		// inn, companyErr := e.repo.SelectCompanyInnById(ctx, req.Accounting.Company)
+		// if companyErr != nil {
+		// 	log.Errorf("failed to get company inn: %v", companyErr)
+		// 	return nil, echo.NewHTTPError(http.StatusBadRequest, "Внутренняя ошибка")
+		// }
 
 		priceLists, priceListErr := e.repo.SelectPriceListsByUploadId(ctx, req.Key)
 		if priceListErr != nil {
@@ -1059,7 +1059,7 @@ func (e ExcelServiceImpl) SaveNomenclatureFromDirectus(ctx context.Context, req 
 			return nil, echo.NewHTTPError(http.StatusBadRequest, "Внутренняя ошибка")
 		}
 
-		suppErr := newSupplierNomenclature(rows, inn, priceLists, e.repo, ctx, upload.CompanyId, upload.UserId)
+		suppErr := newSupplierNomenclature(rows, priceLists, e.repo, ctx, upload.CompanyId, upload.UserId)
 		if suppErr != nil {
 			log.Errorf("failed parse: %v", suppErr)
 			return nil, echo.NewHTTPError(http.StatusInternalServerError, "Внутренняя ошибка")
