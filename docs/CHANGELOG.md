@@ -1,3 +1,11 @@
+# [1.24.0](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.23.0...v1.24.0) (2022-04-11)
+
+
+### Features
+
+* fix ([9b2e2f6](http://gitlab.xplanet.int/xmarket/golang/parser/commit/9b2e2f65b726b527c30924522d7f689d31f2c04f))
+* qwe ([9a74641](http://gitlab.xplanet.int/xmarket/golang/parser/commit/9a7464197b018451fe95fc3d8bd9c2dc32d696a6))
+
 # [1.23.0](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.22.0...v1.23.0) (2022-04-11)
 
 
