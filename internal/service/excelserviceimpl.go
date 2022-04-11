@@ -421,39 +421,6 @@ func (e ExcelServiceImpl) SaveMTRExcelFile(ctx context.Context, file *multipart.
 	return &models.ResponseMsg{Message: "success"}, nil
 }
 
-func takeVolume(name string) (string, float32, float32, float32) {
-	regV, regErr := regexp.Compile(`\d+х.+х\d+`)
-	if regErr != nil {
-		log.Errorf("failed to regexp compile: %v", regErr)
-		return name, 0, 0, 0
-	}
-	volume := regV.FindString(name)
-	if volume != "" {
-		vols := strings.Split(volume, "х")
-		if len(vols) == 3 {
-			length, lenErr := strconv.ParseFloat(strings.Replace(vols[0], ",", ".", 1), 32)
-			if lenErr != nil {
-				log.Errorf("failed to parse float: %v", lenErr)
-				return name, 0, 0, 0
-			}
-			height, heiErr := strconv.ParseFloat(strings.Replace(vols[1], ",", ".", 1), 32)
-			if heiErr != nil {
-				log.Errorf("failed to parse float: %v", heiErr)
-				return name, 0, 0, 0
-			}
-			width, widErr := strconv.ParseFloat(strings.Replace(vols[2], ",", ".", 1), 32)
-			if widErr != nil {
-				log.Errorf("failed to parse float: %v", widErr)
-				return name, 0, 0, 0
-			}
-			name = strings.Replace(name, volume, "", 1)
-			return name, float32(length), float32(height), float32(width)
-		} else {
-			return name, 0, 0, 0
-		}
-	}
-	return name, 0, 0, 0
-}
 
 func takeDraw(name string) (string, string) {
 	fmt.Println("takeDraw")
