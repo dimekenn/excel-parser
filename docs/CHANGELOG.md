@@ -1,3 +1,10 @@
+# [1.25.0](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.24.0...v1.25.0) (2022-04-11)
+
+
+### Features
+
+* swagger fix ([bd32cd0](http://gitlab.xplanet.int/xmarket/golang/parser/commit/bd32cd03f12018e5e646ad871c22e55801d5ae50))
+
 # [1.24.0](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.23.0...v1.24.0) (2022-04-11)
 
 
