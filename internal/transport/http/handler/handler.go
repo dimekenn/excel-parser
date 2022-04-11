@@ -200,3 +200,18 @@ func (h *Handler) SaveNomenclatureFromDirectus(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, res)
 }
+
+func (h *Handler) GetFileColumns(c echo.Context) error {
+	var req models.DirectusModel
+	if bErr := c.Bind(&req); bErr != nil {
+		log.Warn("bad request")
+		return echo.NewHTTPError(http.StatusBadRequest, bErr)
+	}
+
+	res, err := h.excelService.GetFileColumns(c.Request().Context(), &req)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, res)
+}

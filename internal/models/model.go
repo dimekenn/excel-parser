@@ -11,6 +11,11 @@ type ResponseMsg struct {
 	Message string `json:"message"`
 }
 
+type FileColumns struct {
+	RowId int8 `json:"row_id"`
+	RowName string `json:"row_name"`
+}
+
 type Nomenclature struct {
 	Id                    string                 `json:"id"`
 	CodeSkmtr             string                 `json:"code_skmtr"`

@@ -18,7 +18,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type ExcelServiceImpl struct {
@@ -1016,7 +1015,7 @@ func (e ExcelServiceImpl) SaveNomenclatureFromDirectus(ctx context.Context, req 
 		log.Warnf("failed to set upload status", err)
 		return nil, err
 	}
-	time.Sleep(15 * time.Second) // todo удалить после демо 8.10
+	//time.Sleep(15 * time.Second) // todo удалить после демо 8.10
 	upload, uploadErr := e.repo.GetFromUploadCatalogue(ctx, req.Key)
 	if uploadErr != nil {
 		log.Warnf("failed to get upload catalog", uploadErr)
@@ -1114,6 +1113,72 @@ func (e ExcelServiceImpl) SaveNomenclatureFromDirectus(ctx context.Context, req 
 
 	log.Errorf("failed to find correct template")
 	return nil, echo.NewHTTPError(http.StatusBadRequest, "неправильный шаблон документа, обратитесь к нам")
+}
+
+func (e ExcelServiceImpl) GetFileColumns(ctx context.Context, req *models.DirectusModel) ([]*models.FileColumns, error){
+	if req.Collection != "uploads" {
+		log.Warnf("collection is %s not uploads", req.Collection)
+		return nil, echo.NewHTTPError(http.StatusBadRequest, "collection is not uploads")
+	}
+	log.Infof("Start processing upload from directus: %v", req)
+	// err := e.repo.SetUploadStatus(ctx, req.Key, "processing")
+	// if err != nil {
+	// 	log.Warnf("failed to set upload status", err)
+	// 	return nil, err
+	// }
+	//time.Sleep(15 * time.Second) // todo удалить после демо 8.10
+	upload, uploadErr := e.repo.GetFromUploadCatalogue(ctx, req.Key)
+	if uploadErr != nil {
+		log.Warnf("failed to get upload catalog", uploadErr)
+		return nil, uploadErr
+	}
+
+	endpoint := e.cfg.Aws.Host
+	accessKeyID := e.cfg.Aws.SecretKey
+	secretAccessKey := e.cfg.Aws.AccessKey
+	bucket := e.cfg.Aws.Bucket
+	useSSL := false
+
+	// Initialize minio client object.
+	minioClient, err := minio.New(endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(secretAccessKey, accessKeyID, ""),
+		Secure: useSSL,
+	})
+	if err != nil {
+		log.Error("failed to connect to minio: ", err)
+		return nil, echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	minioObj, getObjErr := minioClient.GetObject(ctx, bucket, upload.FileId, minio.GetObjectOptions{})
+	if getObjErr != nil {
+		log.Error("failed to get object:", getObjErr)
+		return nil, echo.NewHTTPError(http.StatusInternalServerError, getObjErr)
+	}
+
+	defer minioObj.Close()
+
+	excelFile, fileErr := excelize.OpenReader(minioObj)
+	if fileErr != nil {
+		log.Errorf("failed to open reader: %v", fileErr)
+		return nil, echo.NewHTTPError(http.StatusBadRequest, fileErr)
+	}
+
+	rows, rowsErr := excelFile.GetRows(excelFile.GetSheetList()[0])
+
+	if rowsErr != nil {
+		log.Errorf("failed to read sheet: %v", rowsErr)
+		return nil, echo.NewHTTPError(http.StatusBadRequest, "Не правильный наименование страницы excel файла. Переименуйте на Лист1")
+	}
+	
+	var fileRows []*models.FileColumns
+	for i, v := range rows[0]{
+		fileRow := &models.FileColumns{}
+		fileRow.RowId = int8(i)
+		fileRow.RowName = v
+		fileRows = append(fileRows, fileRow)
+	}
+
+	return fileRows, nil
 }
 
 // func (e ExcelServiceImpl) SaveCargoCatalogue(ctx context.Context, file *multipart.FileHeader) (*models.ResponseMsg, error) {
