@@ -1,3 +1,10 @@
+# [1.26.0](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.25.0...v1.26.0) (2022-04-11)
+
+
+### Features
+
+* inn fix ([d3b5a92](http://gitlab.xplanet.int/xmarket/golang/parser/commit/d3b5a92b05dcfc0c8e627b76ecc6cae59020518f))
+
 # [1.25.0](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.24.0...v1.25.0) (2022-04-11)
 
 
