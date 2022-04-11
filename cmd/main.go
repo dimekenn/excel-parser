@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	_ "excel-service/docs"
 	"os/signal"
 	"syscall"
 )
