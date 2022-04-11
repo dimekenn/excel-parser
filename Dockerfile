@@ -22,6 +22,7 @@ RUN go mod download
 
 COPY ./cmd ./cmd
 COPY ./internal ./internal
+COPY ./docs ./docs
 RUN go build -ldflags "-s -w" -o main  ./cmd/main.go
 
 
