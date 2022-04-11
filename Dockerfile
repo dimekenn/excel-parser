@@ -1,3 +1,18 @@
+FROM golang:1.16-alpine3.15 as development
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY ./ ./
+
+RUN go build -o main ./cmd/main.go
+
+EXPOSE 9090
+
+CMD ["./main"]
+
+
 FROM golang:1.16-alpine3.15 as pre-production
 WORKDIR /app
 
@@ -7,11 +22,7 @@ RUN go mod download
 
 COPY ./cmd ./cmd
 COPY ./internal ./internal
-
 RUN go build -ldflags "-s -w" -o main  ./cmd/main.go
-EXPOSE 9090
-
-CMD ["./main"]
 
 
 FROM alpine as production
