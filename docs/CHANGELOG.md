@@ -1,3 +1,16 @@
+# [1.22.0](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.21.7...v1.22.0) (2022-04-11)
+
+
+### Features
+
+* api getFileColumns added ([bf9c86d](http://gitlab.xplanet.int/xmarket/golang/parser/commit/bf9c86d73d08dbeff165c0c46831d12721941964))
+* asd ([c81c440](http://gitlab.xplanet.int/xmarket/golang/parser/commit/c81c4403bd74f02e006e4416a47de4b72d60512b))
+* asd ([8abb877](http://gitlab.xplanet.int/xmarket/golang/parser/commit/8abb87748c4f32abd61bdfc8bb0f86d5812fef71))
+* changes ([1a9b8eb](http://gitlab.xplanet.int/xmarket/golang/parser/commit/1a9b8eb9d2ed1a5787d5da501f801b243bcb128c))
+* fixes ([f96032d](http://gitlab.xplanet.int/xmarket/golang/parser/commit/f96032dc32ae3937a0a67d120b3f724862ca2685))
+* swagger ([cf8bb71](http://gitlab.xplanet.int/xmarket/golang/parser/commit/cf8bb71ecbd90b52e4184ced902544d27a73a188))
+* swagger updates ([d2aec41](http://gitlab.xplanet.int/xmarket/golang/parser/commit/d2aec413e799d2334de742f0e8721dadb5be9cd7))
+
 ## [1.21.7](http://gitlab.xplanet.int/xmarket/golang/parser/compare/v1.21.6...v1.21.7) (2022-04-07)
 
 
